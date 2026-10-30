@@ -2742,8 +2742,11 @@ html, body {
       else if (it.state === 'taken') taken += 1;
       else if (it.state === 'expired') expired += 1;
     }
+    const firstNo = p.nums.length ? p.nums[0].no : null;
+    const lastNo = p.nums.length ? p.nums[p.nums.length - 1].no : null;
     return {
       total: p.nums.length, free, mine, taken, expired,
+      range: firstNo && lastNo ? (firstNo + ' ~ ' + lastNo) : null,   // 本次放号区间
       calling: nextFree ? nextFree.no : null,   // 下一个要叫的号
       myNos: p.nums.filter(it => it.state === 'mine').map(it => it.no),
     };
@@ -2810,6 +2813,23 @@ html, body {
     return Math.max(0, Math.min(1, g / b));
   }
 
+  // 补号：一批放完了，接着往下放（号段连续，不会跳回去也不会重号）
+  function refillPool(pool, size, rnd) {
+    const r = typeof rnd === 'function' ? rnd : Math.random;
+    const p = pool || poolOf(size, 'A', 100 + Math.floor(r() * 800), r);
+    const n = Math.max(1, Number(size) || 12);
+    let last = Number(p.start) || 100;
+    for (const it of p.nums || []) {
+      const m = /^(\D*)(\d+)$/.exec(String(it.no || ''));
+      if (m) last = Math.max(last, parseInt(m[2], 10));
+    }
+    const gap = 1 + Math.floor(r() * 19);      // 两批之间留个空档，像真的"再放一批"
+    for (let i = 1; i <= n; i++) {
+      p.nums.push({ no: (p.prefix || 'A') + (last + gap + i - 1), state: 'free' });
+    }
+    return p;
+  }
+
   // ---- 人机验证（T1-2 的「秒杀时刻+验证码」）-------------------------------
   // 规则照 js/ui.js 的 buildCaptcha：找字 / 算术 / 方向三种随机出，失败只加风控不改成功率
   const CAPTCHA_CHARS = '韭牛票抢码黄号手速';
@@ -2861,7 +2881,7 @@ html, body {
     slideScoreOf, slideJudgeOf, spotScoreOf, crowdScoreOf, drawRateOf, CROWD_RATE_BONUS,
     reportScoreOf, reportFeedOf, verifyScoreOf, verifyCodesOf, queueScoreOf, QUEUE,
     haggleFloorOf, haggleReact, haggleScoreOf, HAGGLE,
-    poolOf, poolStats, takeNumber, expireMyNumber, pruneExpired,
+    poolOf, poolStats, takeNumber, expireMyNumber, pruneExpired, refillPool,
     marketTrendOf, marketScoreOf, MARKET,
   };
 
@@ -3686,11 +3706,17 @@ html, body {
     // 号池跟着存档走（run.pools），重开游戏也还在
     run.pools = run.pools || {};
     if (isQueueTask) {
+      const prefix = /包间|VIP/i.test(String((D.TASKS[taskId] || {}).name || '')) ? 'B' : 'A';
+      buy.poolPrefix = prefix;
       if (!run.pools[taskId]) {
-        run.pools[taskId] = R.poolOf(buy.meta.pool, 'A', buy.meta.callingNo, Math.random);
+        run.pools[taskId] = R.poolOf(buy.meta.pool, prefix, buy.meta.callingNo, Math.random);
       }
       R.pruneExpired(run.pools[taskId], Date.now());   // 进关先清算过号的
+      if (R.poolStats(run.pools[taskId]).free === 0) {
+        R.refillPool(run.pools[taskId], buy.meta.pool, Math.random);   // 放完了就再放一批
+      }
       buy.pool = run.pools[taskId];
+      save();
     } else {
       buy.pool = null;
     }
@@ -4209,6 +4235,9 @@ html, body {
     // 判定结果落到号池上：成功=你拿走一个号，失败=别人抢走一个
     let myNo = null;
     if (buy.pool) {
+      if (R.poolStats(buy.pool).free === 0) {
+        R.refillPool(buy.pool, (buy.meta && buy.meta.pool) || 12, Math.random);   // 先补号再发号
+      }
       if (res.success) {
         myNo = R.takeNumber(buy.pool, true, Math.random);
         buy.myNo = myNo;
@@ -4219,6 +4248,9 @@ html, body {
         }
       } else {
         R.takeNumber(buy.pool, false, Math.random);
+      }
+      if (R.poolStats(buy.pool).free === 0) {
+        R.refillPool(buy.pool, (buy.meta && buy.meta.pool) || 12, Math.random);
       }
     }
     save();
@@ -5106,7 +5138,7 @@ html, body {
     // 取号区
     const m = buy.meta || {};
     const poolSt = buy.pool ? R.poolStats(buy.pool) : null;
-    const calling = poolSt && poolSt.calling ? poolSt.calling : (m.callingNo || 208) + buy.round;
+    const calling = poolSt && poolSt.calling ? poolSt.calling : '—';
     const poolTotal = (poolSt && poolSt.total) || m.pool || 18;
     const poolLeft = poolSt ? poolSt.free : Math.max(0, poolTotal - buy.results.filter(r => r.id !== 'miss').length);
     const zone = el('div', 'bao-card');
@@ -5123,7 +5155,7 @@ html, body {
       </div>
       <div class="gap8"></div>
       <div class="kv"><span>今日放出的普通桌号</span><span class="v">${poolTotal} 个</span></div>
-      <div class="kv"><span>放号区间</span><span class="v">${poolSt && poolSt.range ? esc(poolSt.range) : '—'}</span></div>
+      <div class="kv"><span>放号区间（${buy.poolPrefix === 'B' ? '包间号' : '大厅号'}）</span><span class="v">${poolSt && poolSt.range ? esc(poolSt.range) : '—'}</span></div>
       <div class="kv"><span>到店可用时段</span><span class="v">今晚 18:00 - 22:00</span></div>
       <div class="kv"><span>本任务目标</span><span class="v">${esc(t.goal)}</span></div>
       <div class="stock-row">
@@ -5305,6 +5337,7 @@ html, body {
       const ticket = el('div', 'draw-result win');
       ticket.innerHTML = `
         <div class="draw-title">你的号 · ${esc(r.myNo)}</div>
+        <div class="draw-row"><span>本次放号</span><span class="v">${esc(R.poolStats(buy.pool).range || '—')}</span></div>
         <div class="draw-row"><span>过号作废</span><span class="v pay" data-role="noLeft">10:00</span></div>
         <div class="draw-row"><span>剩余号数</span><span class="v">${R.poolStats(buy.pool).free} 个</span></div>
         <div class="draw-note">号子可转让给好友，转让后不可撤回</div>`;
