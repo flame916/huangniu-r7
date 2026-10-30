@@ -3236,6 +3236,54 @@ html, body {
     app.appendChild(s);
   }
 
+
+  // =========================================================================
+  // 装备店（复刻版）：引擎自带 D.EQUIPMENT 升级链，买了真的改手感
+  // timingTotal / perfectThreshold 会跟着变（倒计时更长、完美判定更宽）
+  // =========================================================================
+  function renderShop() {
+    const run = app2.run || (app2.run = freshRun());
+    app.innerHTML = '';
+    const s = el('div', 'screen dark');
+    s.innerHTML = hud(run);
+
+    const head = el('div', 'talk');
+    head.innerHTML = `
+      <div class="talk-who"><div class="name">装备店</div>
+        <div class="sub">钱能花，花得有着落</div></div>
+      <div class="hairline"></div>
+      <div class="talk-text">${esc(
+        '当前设备：' + (D.EQUIPMENT.find(e => e.id === (run.equipmentId || 'e0')) || D.EQUIPMENT[0]).name)}</div>`;
+    s.appendChild(head);
+
+    const list = el('div', 'actions');
+    (D.EQUIPMENT || []).forEach(eq => {
+      const owned = eq.id === (run.equipmentId || 'e0');
+      const affordable = (run.money || 0) >= (eq.price || 0);
+      const row = el('button', 'btn btn-ghost' + (owned ? ' owned' : ''),
+        `${owned ? '✓ ' : ''}${esc(eq.name)}${eq.price ? ' · ¥' + eq.price : ''}\n${esc(eq.desc || '')}`);
+      row.style.whiteSpace = 'pre-line';
+      row.disabled = owned || !affordable || (eq.price || 0) <= 0;
+      row.onclick = () => {
+        if ((run.money || 0) < (eq.price || 0)) { toast('钱不够'); return; }
+        run.money = (run.money || 0) - (eq.price || 0);
+        run.equipmentId = eq.id;
+        save();
+        toast('换了设备：' + eq.name);
+        render();
+      };
+      list.appendChild(row);
+    });
+    s.appendChild(list);
+
+    const back = el('div', 'actions');
+    const b = el('button', 'btn btn-primary', '回标题');
+    b.onclick = () => go('title');
+    back.appendChild(b);
+    s.appendChild(back);
+    app.appendChild(s);
+  }
+
   // =========================================================================
   // 标题
   // =========================================================================
@@ -3264,6 +3312,10 @@ html, body {
       go('story');
     };
     act.appendChild(b1);
+    const shopBtn = el('button', 'btn btn-ghost', '装备店（用钱换手感）');
+    shopBtn.onclick = () => { if (!app2.run) app2.run = freshRun(); go('shop'); };
+    act.appendChild(shopBtn);
+
     if (hasSave) {
       const b2 = el('button', 'btn btn-ghost', '重新开始（清空本版本存档）');
       b2.onclick = () => {
@@ -5071,6 +5123,7 @@ html, body {
       </div>
       <div class="gap8"></div>
       <div class="kv"><span>今日放出的普通桌号</span><span class="v">${poolTotal} 个</span></div>
+      <div class="kv"><span>放号区间</span><span class="v">${poolSt && poolSt.range ? esc(poolSt.range) : '—'}</span></div>
       <div class="kv"><span>到店可用时段</span><span class="v">今晚 18:00 - 22:00</span></div>
       <div class="kv"><span>本任务目标</span><span class="v">${esc(t.goal)}</span></div>
       <div class="stock-row">
@@ -5236,6 +5289,14 @@ html, body {
     });
     card.appendChild(chips);
 
+    // 命中但号池空了：说清楚"这次没拿到号"
+    if (r.success && !r.myNo && buy.pool) {
+      const empty = el('div', 'draw-result lose');
+      empty.innerHTML = `<div class="draw-title">号已经放完了</div>
+        <div class="draw-note">这一轮没捞到号，下次放号再来</div>`;
+      card.appendChild(empty);
+    }
+
     // 取号任务：你抢到的那个号（真号）+ 过号倒计时 + 加价转让
     if (r.myNo && buy.pool) {
       // 先算一次：万一回来的时候已经过号了
@@ -5316,6 +5377,7 @@ html, body {
       case 'buy': renderBuy(); break;
       case 'result': renderResult(); break;
       case 'boost': renderBoost(); break;
+      case 'shop': renderShop(); break;
       default: renderTitle();
     }
   }
