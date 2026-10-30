@@ -5540,7 +5540,10 @@ html, body {
     if (shellId === 'bobo') {
       return last.id === 'perfect' ? '正中开签 · 中签' : '已中签 · 待核销';
     }
-    return last.id === 'perfect' ? '正中放号 · A' + (208 + buy.round) + ' 到手' : '取号成功 · A' + (208 + buy.round);
+    // 号只能来自号池：拿到真号就显示真号，没拿到就说"排队中"（绝不自己编一个 A208）
+    const realNo = buy.myNo || (buy.lastNo && buy.lastNo.id === last.id ? buy.lastNo.no : null);
+    if (!realNo) return last.id === 'perfect' ? '正中放号 · 排队中' : '取号成功 · 排队中';
+    return last.id === 'perfect' ? '正中放号 · ' + realNo + ' 到手' : '取号成功 · ' + realNo;
   }
 
   function judgeColor() {
