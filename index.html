@@ -1355,6 +1355,48 @@ html, body {
 /* 取号任务的票根块 */
 .draw-result .draw-title { letter-spacing: 1px; }
 
+/* ---- 出货行情（market）---- */
+.mkt-box { text-align: center; margin-bottom: 6px; }
+.mkt-trend { font-size: 13px; font-weight: 700; }
+.mkt-trend b { margin-left: 4px; }
+.mkt-trend.up { color: #16A06A; }
+.mkt-trend.flat { color: var(--bao-dim); }
+.mkt-trend.down { color: var(--bao-danger); }
+.mkt-item { font-size: 12px; color: var(--bao-text); margin-top: 2px; }
+.mkt-item b { color: var(--bao-danger); }
+.mkt-meta { font-size: 10px; color: var(--bao-dim); margin-top: 2px; }
+.mkt-acts { display: flex; flex-direction: column; gap: 6px; }
+.mkt-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--bao-line);
+  background: var(--bao-card);
+  color: var(--bao-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.mkt-btn.retail { border-color: rgba(22, 160, 106, 0.5); }
+.mkt-btn.vip { border-color: rgba(232, 58, 46, 0.5); }
+.mkt-btn:active { transform: scale(0.97); }
+.mkt-wait {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 38px;
+  margin-top: 6px;
+  border-radius: 10px;
+  border: 1px dashed var(--bao-line);
+  background: transparent;
+  color: var(--bao-dim);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 </style>
 </head>
 <body>
@@ -2752,6 +2794,22 @@ html, body {
     return false;
   }
 
+  // ---- 出货行情（market）：抢是手艺，卖是命 --------------------------------
+  const MARKET = { ROUNDS: 3 };
+  function marketTrendOf(idx) {
+    const v = Number(idx) || 100;
+    if (v >= 120) return { label: '行情火热', tone: 'up', sign: '+' + (v - 100) + '%' };
+    if (v >= 106) return { label: '小幅走高', tone: 'up', sign: '+' + (v - 100) + '%' };
+    if (v >= 95) return { label: '横盘不动', tone: 'flat', sign: (v - 100) + '%' };
+    return { label: '行情冷淡', tone: 'down', sign: (v - 100) + '%' };
+  }
+  // gain 实际进账、baseline 开卖前的估值合计
+  function marketScoreOf(gain, baseline) {
+    const b = Math.max(1, Number(baseline) || 1);
+    const g = Math.max(0, Number(gain) || 0);
+    return Math.max(0, Math.min(1, g / b));
+  }
+
   // ---- 人机验证（T1-2 的「秒杀时刻+验证码」）-------------------------------
   // 规则照 js/ui.js 的 buildCaptcha：找字 / 算术 / 方向三种随机出，失败只加风控不改成功率
   const CAPTCHA_CHARS = '韭牛票抢码黄号手速';
@@ -2804,6 +2862,7 @@ html, body {
     reportScoreOf, reportFeedOf, verifyScoreOf, verifyCodesOf, queueScoreOf, QUEUE,
     haggleFloorOf, haggleReact, haggleScoreOf, HAGGLE,
     poolOf, poolStats, takeNumber, expireMyNumber, pruneExpired,
+    marketTrendOf, marketScoreOf, MARKET,
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = Rules;
@@ -2854,6 +2913,11 @@ html, body {
       minigame: '滑块选座', mode: 'slide', baseRate: 0.35, progressTarget: 1,
       rewards: { luck: 800 }, loot: { name: '内场连座选座权', base: 800 }, nextTask: null,
     },
+    'X-9': {
+      id: 'X-9', chapter: 'ch4', name: '出货行情', goal: '卖出 3 件别亏',
+      minigame: '出货行情', mode: 'market', baseRate: 0.4, progressTarget: 1,
+      rewards: { luck: 1000 }, loot: { name: '出货差价', base: 800 }, nextTask: null,
+    },
     'X-8': {
       id: 'X-8', chapter: 'ch4', name: '验货议价', goal: '把价压到 300 以内',
       minigame: '验货议价', mode: 'haggle', baseRate: 0.36, progressTarget: 1,
@@ -2901,6 +2965,19 @@ html, body {
       id: 'X2', type: 'task', speaker: '系统',
       text: '倒倒上这张二手票，卖家说「绝对真票，扫码可验」。九张票摆在你面前，只有两张是真的。\n\n「摸清楚了再下手，」老父亲难得讲道理，「买错一张，钱和人都搭进去。」',
       taskId: 'X-2', onComplete: 'X2b',
+    },
+    X9: {
+      id: 'X9', type: 'task', speaker: '系统',
+      text: '货压在手里，行情每天在动。\n\n「抢是手艺，卖是命。」老父亲念给你听，「零售赚得多但要等，同行来得快但压价，大客户——运气好一夜暴富，运气差血本无归。」',
+      taskId: 'X-9', onComplete: 'X9b',
+    },
+    X9b: {
+      id: 'X9b', type: 'choice', speaker: '倒号老头',
+      text: '钱到账了。老头又凑过来：「最后一件别卖了，留着——万一明天更贵呢？」',
+      choices: [
+        { id: 'hold', text: '留着赌明天（风控 +3）', next: 'C4_2', effect: { risk: 3 } },
+        { id: 'cashAll', text: '全清了，落袋为安（+¥120）', next: 'C4_2', effect: { money: 120 } },
+      ],
     },
     X8: {
       id: 'X8', type: 'task', speaker: '系统',
@@ -2951,6 +3028,7 @@ html, body {
   if (D.STORY.X2b) {
     D.STORY.X2b.choices = D.STORY.X2b.choices.map(c => Object.assign({}, c, { next: 'X8' }));
   }
+  if (D.STORY.C4_1) D.STORY.C4_1.onComplete = 'X9';
   if (D.STORY.C1_1) D.STORY.C1_1.onComplete = 'X7';
   if (D.STORY.C2_2) D.STORY.C2_2.onComplete = 'X4';
   if (D.STORY.X4) D.STORY.X4.onComplete = 'X6';
@@ -3466,6 +3544,7 @@ html, body {
     verify: null,       // 门店核销：{ codes, idx, pos, done, wrongs, need }
     queue: null,        // 代排队：{ pos, cutters, blocked, active, nextDrift, nextCutter, t }
     haggle: null,       // 验货议价：{ ask, floor, round, offers, closed, finalPrice }
+    market: null,       // 出货行情：{ round, gain, sold, baseline, log }
     spot: null,         // 验真票：{ cards, hits, misses, need, done }
     multiPrompts: 6,    // 一次抢票要点亮几次
     multiWindowMs: 760, // 每次点亮持续多久
@@ -3507,7 +3586,7 @@ html, body {
     buy.geo = R.barGeometry(buy.totalMs);
     const rawMode = (D.TASKS[taskId] && D.TASKS[taskId].mode) || 'timing';
     // 演出票（第三章）改成多线作战：三个场次同时开售，点亮就点
-    buy.mode = (['slide', 'spot', 'crowd', 'report', 'verify', 'queue', 'haggle'].indexOf(rawMode) >= 0) ? rawMode
+    buy.mode = (['slide', 'spot', 'crowd', 'report', 'verify', 'queue', 'haggle', 'market'].indexOf(rawMode) >= 0) ? rawMode
              : taskCh0 === 'ch3' ? 'multi'
              : rawMode === 'rapid' ? 'rapid' : 'timing';
     buy.taps = 0;
@@ -3531,6 +3610,17 @@ html, body {
       storeStock: [ri(0, 3), ri(0, 2), ri(0, 4)],
       trainSeat: [ri(1, 9), ri(0, 3), ri(2, 12)],
     };
+    if (buy.mode === 'market') {
+      buy.totalMs = 0;
+      // 背包里没货就塞两件合成战利品，保证这一关能玩
+      run.inventory = run.inventory || [];
+      if (run.inventory.length === 0) {
+        run.inventory.push({ name: '悬崖火锅号', base: 500, held: 0, quality: 'good' });
+        run.inventory.push({ name: '夜光鬼火隐藏款', base: 1500, held: 0, quality: 'normal' });
+      }
+      const baseline = run.inventory.reduce((n, it) => n + G.itemValue(run, it), 0);
+      buy.market = { round: 0, gain: 0, sold: 0, baseline, log: [] };
+    }
     if (buy.mode === 'haggle') {
       buy.totalMs = 0;
       buy.haggle = {
@@ -3815,6 +3905,36 @@ html, body {
     const remain = buy.totalMs - buy.t;         // 距「放号那一刻」的毫秒差
     const judge = R.judgeOf(remain);
     buyJudge(judge, judge.label);
+  }
+
+  function buyMarketSell(channel) {
+    if (buy.phase !== 'run' || buy.mode !== 'market') return;
+    const mk = buy.market;
+    const run = app2.run;
+    if (!mk || !run.inventory || run.inventory.length === 0) { toast('没货可卖了'); buySettle(); return; }
+    const res = G.sellItem(run, 0, channel);
+    if (!res.ok) { toast('这件卖不掉'); return; }
+    mk.gain += res.gain || 0;
+    mk.sold += 1;
+    mk.round += 1;
+    mk.log.push({ channel, gain: res.gain, outcome: res.outcome });
+    buzz(12);
+    save();
+    if (mk.round >= R.MARKET.ROUNDS || !run.inventory.length) { buySettle(); return; }
+    G.advanceMarket(run);
+    render();
+  }
+
+  function buyMarketWait() {
+    if (buy.phase !== 'run' || buy.mode !== 'market') return;
+    const mk = buy.market;
+    const run = app2.run;
+    if (!mk) return;
+    mk.round += 1;
+    G.advanceMarket(run);          // 行情动一轮，手里的货 held+1 会跌价
+    save();
+    if (mk.round >= R.MARKET.ROUNDS) { buySettle(); return; }
+    render();
   }
 
   function buyHaggleOffer(delta) {
@@ -4621,7 +4741,8 @@ html, body {
           : buy.mode === 'report' ? '举报进度'
           : buy.mode === 'verify' ? '已核销'
           : buy.mode === 'queue' ? '当前位置'
-          : buy.mode === 'haggle' ? '卖家要价' : esc(shell.clockLabel)}</div>
+          : buy.mode === 'haggle' ? '卖家要价'
+          : buy.mode === 'market' ? '行情指数' : esc(shell.clockLabel)}</div>
         <div class="clock${remainSec <= 0.6 && buy.phase === 'run' ? ' hot' : ''}">${
           buy.mode === 'spot'
             ? ((buy.spot ? buy.spot.hits : 0) + ' / ' + (buy.spot ? buy.spot.need : 2))
@@ -4635,7 +4756,9 @@ html, body {
                     ? ('#' + (buy.queue ? Math.max(1, buy.queue.pos) : R.QUEUE.START))
                     : buy.mode === 'haggle'
                       ? ('¥' + ((buy.haggle && buy.haggle.ask) || R.HAGGLE.START))
-                      : remainSec.toFixed(2)
+                      : buy.mode === 'market'
+                        ? String((app2.run && app2.run.marketIdx) || 100)
+                        : remainSec.toFixed(2)
         }</div>
       </div>
       <div class="judge-col">
@@ -4645,7 +4768,43 @@ html, body {
     bottom.appendChild(clockRow);
 
     const wrap = el('div', 'track-wrap');
-    if (buy.mode === 'haggle') {
+    if (buy.mode === 'market') {
+      buy.totalMs = 0;
+      // 背包里没货就塞两件合成战利品，保证这一关能玩
+      run.inventory = run.inventory || [];
+      if (run.inventory.length === 0) {
+        run.inventory.push({ name: '悬崖火锅号', base: 500, held: 0, quality: 'good' });
+        run.inventory.push({ name: '夜光鬼火隐藏款', base: 1500, held: 0, quality: 'normal' });
+      }
+      const baseline = run.inventory.reduce((n, it) => n + G.itemValue(run, it), 0);
+      buy.market = { round: 0, gain: 0, sold: 0, baseline, log: [] };
+    }
+    if (buy.mode === 'market') {
+      const mk = buy.market || { round: 0, gain: 0, sold: 0, baseline: 1, log: [] };
+      const run2 = app2.run;
+      const trend = R.marketTrendOf(run2.marketIdx);
+      const inv = run2.inventory || [];
+      const box = el('div', 'mkt-box');
+      const firstItem = inv[0];
+      const est = firstItem ? G.itemValue(run2, firstItem) : 0;
+      box.innerHTML = `
+        <div class="mkt-trend ${trend.tone}">${esc(trend.label)} <b>${esc(trend.sign)}</b></div>
+        <div class="mkt-item">${firstItem ? esc(firstItem.name) + ' · 现估 <b>¥' + est + '</b>' : '背包空了'}</div>
+        <div class="mkt-meta">第 ${Math.min(mk.round + 1, R.MARKET.ROUNDS)} / ${R.MARKET.ROUNDS} 轮 · 已进账 ¥${mk.gain}</div>`;
+      wrap.appendChild(box);
+
+      const acts = el('div', 'mkt-acts');
+      [['retail', '零售（赚多但要等）'], ['wholesale', '同行（快但压价）'], ['vip', '大客户（暴富或归零）']]
+        .forEach(([ch, label]) => {
+          const b = el('button', 'mkt-btn ' + ch, label);
+          b.onclick = () => buyMarketSell(ch);
+          acts.appendChild(b);
+        });
+      wrap.appendChild(acts);
+      const wait = el('button', 'mkt-wait', '等一轮行情（手里的货会跌价）');
+      wait.onclick = buyMarketWait;
+      wrap.appendChild(wait);
+    } else if (buy.mode === 'haggle') {
       const h = buy.haggle || { ask: 388, round: 0, log: [] };
       const box = el('div', 'haggle-box');
       const last = h.log[h.log.length - 1];
@@ -4854,7 +5013,7 @@ html, body {
     const tapLabel = buy.phase === 'intro' ? shell.tapIntro
                    : buy.phase === 'run'   ? shell.tapIdle
                    : shell.tapBusy;
-    if (['multi', 'spot', 'crowd', 'report', 'verify', 'queue', 'haggle'].indexOf(buy.mode) < 0) {
+    if (['multi', 'spot', 'crowd', 'report', 'verify', 'queue', 'haggle', 'market'].indexOf(buy.mode) < 0) {
       const label = buy.mode === 'slide'
         ? (buy.phase === 'run' ? '松手确认' : shell.tapIntro)
         : tapLabel;
