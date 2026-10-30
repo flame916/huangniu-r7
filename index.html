@@ -1573,6 +1573,15 @@ html, body {
 .verdict-big.lose .vb-mark { color: var(--danger); }
 .vb-sub { font-size: 12px; color: var(--text-2, #d8c9ae); line-height: 1.5; }
 
+/* 局内结论块在浅色壳（饱了么）里要压深一点，浅底上金/红都得看得清 */
+.bao-bottom .verdict-big { margin: 6px 0 8px; padding: 10px 12px; }
+.bao-bottom .verdict-big.win { background: rgba(255, 201, 60, 0.18); border-color: rgba(178, 107, 0, 0.45); }
+.bao-bottom .verdict-big.lose { background: rgba(226, 50, 52, 0.12); border-color: rgba(192, 57, 43, 0.45); }
+.bao-bottom .verdict-big.win .vb-mark { color: #A15C00; }
+.bao-bottom .verdict-big.lose .vb-mark { color: #C0392B; }
+.bao-bottom .verdict-big .vb-sub { color: #5C4A34; }
+.bao-bottom .bao-tap.ghost { background: rgba(0, 0, 0, 0.06); color: #5C4A34; border: 1px solid rgba(0, 0, 0, 0.10); }
+
 </style>
 </head>
 <body>
@@ -3930,6 +3939,10 @@ html, body {
     captcha: null,      // T1-2：人机验证的当前题目
     needCaptcha: false,
     shell: 'bao',       // 当前壳：bao（取号）/ bobo（抽签）
+    decided: null,      // 'win' | 'lose'：每一局结束就定，不用等结算页
+    lastRes: null,      // 这一局 rollPurchase 的原始结果
+    firstBefore: null,  // 第一次判定前的快照（结算页要显示"判定前"的数）
+    settled: false,
     mode: 'timing',     // timing（压窗口）/ rapid（连点抢票）
     boost: { clips: 0, t: 0, need: 3, clipMs: 1200, windowMs: 7000, running: false },
     multi: null,        // 多线抢票：{ lanes, hits, misses, prompts, t, nextAt, lit }
@@ -3965,6 +3978,11 @@ html, body {
     buy.round = 0;
     buy.results = [];
     buy.trapUsed = false;
+    buy.decided = null;
+    buy.lastRes = null;
+    buy.firstBefore = null;
+    buy.settled = false;
+    buy.myNo = null;
     const run = app2.run;
     const taskCh0 = D.TASKS[taskId] && D.TASKS[taskId].chapter;
     const taskCh = taskCh0;
@@ -4239,6 +4257,7 @@ html, body {
     }
 
     if (buy.phase === 'judge') {
+      if (buy.decided) return;         // 结论已出，等玩家点按钮
       if (buy.t >= 1100) {
         if (buy.round + 1 >= R.ROUNDS) {
           buy.phase = 'done';
@@ -4252,6 +4271,39 @@ html, body {
     }
   }
 
+  // 每局结束立刻判一次（rollPurchase 本来就是"一次尝试"，带疲劳和保底）
+  function buyRollOnce(score) {
+    const run = app2.run;
+    if (!buy.firstBefore) {
+      buy.firstBefore = {
+        rate: G.getTaskRate(run, buy.taskId),
+        cap: levelOf(run).cap,
+        money: run.money,
+        level: run.level,
+      };
+    }
+    const res = G.rollPurchase(run, buy.taskId, score);
+    buy.lastRes = res;
+    return res;
+  }
+
+  // 抢到就把号拿到手，界面立刻能显示真号
+  function buyIssueNumber() {
+    if (!buy.pool) return null;
+    if (R.poolStats(buy.pool).free === 0) {
+      R.refillPool(buy.pool, (buy.meta && buy.meta.pool) || 12, Math.random);
+    }
+    const no = R.takeNumber(buy.pool, true, Math.random);
+    buy.myNo = no;
+    if (no) {
+      for (const it of buy.pool.nums) if (it.no === no) it.expireAt = Date.now() + 10 * 60 * 1000;
+    }
+    save();
+    return no;
+  }
+
+  const TIMING_MODES = ['timing'];
+
   function buyJudge(judge, label) {
     if (buy.phase !== 'run') return;
     buy.phase = 'judge';
@@ -4259,6 +4311,21 @@ html, body {
     buy.trapOn = false;
     buy.results.push({ id: judge.id, label: label || judge.label });
     render();
+
+    // 秒杀类每局都判：成了当场锁定，没成就继续下一局
+    if (TIMING_MODES.indexOf(buy.mode) >= 0 && !buy.decided) {
+      const one = R.timingScoreOf([judge.id]);
+      const res = buyRollOnce(one);
+      buy.results[buy.results.length - 1].won = res.success;
+      if (res.success) {
+        buy.decided = 'win';
+        const no = buyIssueNumber();
+        if (no) toast('抢到了 · ' + no);
+      } else if (buy.round + 1 >= R.ROUNDS) {
+        buy.decided = 'lose';
+      }
+      render();
+    }
   }
 
   // 手机上按下去要有"手感"：能震就震一下，不能震靠 CSS 的 scale/变色
@@ -4496,6 +4563,8 @@ html, body {
   }
 
   function buySettle() {
+    if (buy.settled) return;
+    buy.settled = true;
     const run = app2.run;
     let score;
     if (buy.mode === 'queue') {
@@ -4548,16 +4617,17 @@ html, body {
     } else {
       score = R.timingScoreOf(buy.results.map(r => r.id));
     }
-    const before = {
+    const before = buy.firstBefore || {
       rate: G.getTaskRate(run, buy.taskId),
       cap: levelOf(run).cap,
       money: run.money,
       level: run.level,
     };
-    const res = G.rollPurchase(run, buy.taskId, score);
+    // 秒杀类已经在每局结束时判过了，这里只取结果，不要重判
+    const res = buy.lastRes || G.rollPurchase(run, buy.taskId, score);
     // 判定结果落到号池上：成功=你拿走一个号，失败=别人抢走一个
-    let myNo = null;
-    if (buy.pool) {
+    let myNo = buy.myNo || null;
+    if (buy.pool && !myNo) {
       if (R.poolStats(buy.pool).free === 0) {
         R.refillPool(buy.pool, (buy.meta && buy.meta.pool) || 12, Math.random);   // 先补号再发号
       }
@@ -5425,10 +5495,31 @@ html, body {
       const label = buy.mode === 'slide'
         ? (buy.phase === 'run' ? '松手确认' : shell.tapIntro)
         : tapLabel;
-      const tap = el('button', 'bao-tap', label);
-      tap.disabled = buy.phase !== 'run';
-      tap.onclick = buyTap;
-      bottom.appendChild(tap);
+      if (buy.decided) {
+        // 结论直接在局内显示，不用等结算页
+        const won = buy.decided === 'win';
+        const vb = el('div', 'verdict-big ' + (won ? 'win' : 'lose'));
+        vb.setAttribute('data-role', 'inlineVerdict');
+        vb.innerHTML = `<div class="vb-mark">${won ? '抢到了' : '没抢到'}</div>
+          <div class="vb-sub">${won
+            ? (buy.myNo ? '你的号 ' + esc(buy.myNo) + ' · 10 分钟内到店报号' : '名额锁定 · 排队中')
+            : '三局都用完了 · 保底已经涨上去了'}</div>`;
+        bottom.appendChild(vb);
+        const goBtn = el('button', 'bao-tap', won ? '看票根 · 去核销' : '看票根');
+        goBtn.onclick = () => buySettle();   // 结算里会写 lastResult 并跳转
+        bottom.appendChild(goBtn);
+        const again = el('button', 'bao-tap ghost', won ? '不要了 · 回标题' : '再抢一次');
+        again.onclick = () => {
+          if (won) { go('title'); return; }
+          buyStart(buy.taskId);
+        };
+        bottom.appendChild(again);
+      } else {
+        const tap = el('button', 'bao-tap', label);
+        tap.disabled = buy.phase !== 'run';
+        tap.onclick = buyTap;
+        bottom.appendChild(tap);
+      }
     }
     s.appendChild(bottom);
 
@@ -5553,15 +5644,20 @@ html, body {
   }
 
   function judgeText() {
+    // 结论优先：抢到没抢到，别被"号被抢光了"这类局内文案盖住
+    if (buy.decided === 'win') return '抢到了 · ' + (buy.myNo || '排队中');
+    if (buy.decided === 'lose') return '三局都没上 · 没抢到';
     if (buy.phase !== 'judge') return '　';
     const last = buy.results[buy.results.length - 1];
     if (!last) return '　';
+    if (last.won === true) return '这一局抢到了';
+    if (last.won === false) return '这一局没抢上 · 还剩 ' + Math.max(0, R.ROUNDS - buy.results.length) + ' 次';
     if (last.id === 'miss') return SHELL_DEFS[buy.shell || 'bao'].soldOut;
     const shellId = buy.shell || 'bao';
     if (shellId === 'bobo') {
       return last.id === 'perfect' ? '正中开签 · 中签' : '已中签 · 待核销';
     }
-    // 这一局只是"手速表现"，不是最终成败（成败在结算才定）
+    // 非秒杀模式（滑块/多线等）：如实说这一局的手感
     if (last.id === 'perfect') return '手感极好 · 卡在放号瞬间';
     if (last.id === 'good') return '手速还行 · 压线进';
     if (last.id === 'ok') return '慢半拍 · 勉强跟上';
