@@ -2,9 +2,6 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="robots" content="noindex, nofollow, noarchive">
-<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1551,6 +1548,30 @@ html, body {
 .title-screen > *:not(.title-bg) { position: relative; z-index: 1; }
 .title-screen .rain { animation: rainFall 1.6s linear infinite; }
 @keyframes rainFall { from { transform: translateY(-30px); } to { transform: translateY(30px); } }
+
+/* 结算结论块：抢到没抢到，一眼看完 */
+.verdict-big {
+  width: 100%;
+  padding: 14px 14px 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid transparent;
+  margin: 4px 0 2px;
+}
+.verdict-big.win {
+  background: rgba(255, 201, 60, 0.12);
+  border-color: rgba(255, 201, 60, 0.5);
+}
+.verdict-big.lose {
+  background: rgba(226, 50, 52, 0.10);
+  border-color: rgba(226, 50, 52, 0.42);
+}
+.vb-mark { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+.verdict-big.win .vb-mark { color: var(--gold); }
+.verdict-big.lose .vb-mark { color: var(--danger); }
+.vb-sub { font-size: 12px; color: var(--text-2, #d8c9ae); line-height: 1.5; }
 
 </style>
 </head>
@@ -5540,10 +5561,11 @@ html, body {
     if (shellId === 'bobo') {
       return last.id === 'perfect' ? '正中开签 · 中签' : '已中签 · 待核销';
     }
-    // 号只能来自号池：拿到真号就显示真号，没拿到就说"排队中"（绝不自己编一个 A208）
-    const realNo = buy.myNo || (buy.lastNo && buy.lastNo.id === last.id ? buy.lastNo.no : null);
-    if (!realNo) return last.id === 'perfect' ? '正中放号 · 排队中' : '取号成功 · 排队中';
-    return last.id === 'perfect' ? '正中放号 · ' + realNo + ' 到手' : '取号成功 · ' + realNo;
+    // 这一局只是"手速表现"，不是最终成败（成败在结算才定）
+    if (last.id === 'perfect') return '手感极好 · 卡在放号瞬间';
+    if (last.id === 'good') return '手速还行 · 压线进';
+    if (last.id === 'ok') return '慢半拍 · 勉强跟上';
+    return '这一局被抢光了';
   }
 
   function judgeColor() {
@@ -5582,8 +5604,23 @@ html, body {
     const isTrain = ch === 'chunyun';
     const okLabel = isDraw ? '中签' : isTicket ? '抢票成功' : isTrain ? '候补成功' : isDeal ? '拍下 · 待付款' : '取号成功';
     const failLabel = isDraw ? '未中签' : isTicket ? '手慢了 · 连座已锁' : isTrain ? '候补失败 · 已售完' : isDeal ? '已被别人拍走' : '号被抢光了';
-    card.appendChild(el('div', 'verdict ' + (r.success ? 'ok' : 'fail'),
-      r.success ? okLabel : failLabel));
+    // ---- 结论：抢到没抢到，一眼看完 ----
+    const wonNow = r.success && (r.myNo || !buy.pool);
+    const soldOut = r.success && buy.pool && !r.myNo;
+    const bigWord = wonNow
+      ? (isDraw ? '中签了' : isTicket ? '抢到了' : isTrain ? '候补上了' : isDeal ? '拍下了' : '抢到了')
+      : (isDraw ? '没中签' : isTicket ? '没抢到' : isTrain ? '没候补上' : isDeal ? '没拍上'
+          : soldOut ? '没抢到 · 号放完了' : '没抢到');
+    const bigSub = wonNow
+      ? (r.myNo ? '你的号 ' + r.myNo + ' · 10 分钟内到店报号才有效' : '名额已锁定 · 按页面提示完成下一步')
+      : (isDraw ? '这一轮名额被别人的签占走了，下一轮欧气会累积'
+          : soldOut ? '这一轮号发完了，跟你抢得快慢无关'
+          : '中签率没落上你，保底已经给你加上去了');
+    const vbox = el('div', 'verdict-big ' + (wonNow ? 'win' : 'lose'));
+    vbox.setAttribute('data-role', 'verdict');
+    vbox.innerHTML = `<div class="vb-mark">${esc(bigWord)}</div>
+      <div class="vb-sub">${esc(bigSub)}</div>`;
+    card.appendChild(vbox);
     const allMiss = r.results.length && r.results.every(x => x.id === 'miss');
     const verdictLine = isDraw
       ? (allMiss ? '三个签全空，名额被别人的手气占走了'
