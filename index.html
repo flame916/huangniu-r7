@@ -1397,6 +1397,141 @@ html, body {
   cursor: pointer;
 }
 
+/* ============================================================================
+   入场页：票根主视觉 + 0.3% 大数字 + 倒计时脉动
+   ============================================================================ */
+.title-screen {
+  background:
+    radial-gradient(120% 70% at 50% -10%, #2A1A0C 0%, #140E0A 55%, #0A0705 100%);
+  padding: calc(26px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.title-screen::before {
+  content: '';
+  position: absolute;
+  inset: -20% -40% auto -40%;
+  height: 60%;
+  background: radial-gradient(closest-side, rgba(255, 201, 60, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
+.title-hero { display: flex; flex-direction: column; gap: 4px; position: relative; }
+.hero-line { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.hero-big {
+  font-size: 54px; font-weight: 700; line-height: 1.02;
+  color: var(--text); letter-spacing: 2px;
+}
+.hero-big-accent { color: var(--gold); text-shadow: 0 0 24px rgba(255, 201, 60, 0.3); }
+.hero-sub { font-size: 20px; font-weight: 700; color: var(--dim); letter-spacing: 2px; }
+.hero-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.hero-tags span {
+  font-size: 10px; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid rgba(196, 148, 44, 0.4); color: var(--gold-soft);
+}
+.brand-mark {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--gold-soft);
+}
+.brand-sub {
+  font-size: 9px; letter-spacing: 1px; color: var(--dim);
+  border: 1px solid rgba(176, 154, 122, 0.5); border-radius: 3px; padding: 1px 5px;
+}
+
+/* 票根 */
+.hero-ticket {
+  position: relative;
+  background: linear-gradient(150deg, #3A2A18 0%, #241A11 60%, #1B130C 100%);
+  border: 1px solid rgba(196, 148, 44, 0.55);
+  border-radius: 14px;
+  padding: 16px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 228, 158, 0.08);
+  overflow: hidden;
+}
+.ticket-notch {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0A0705;
+  top: 96px;
+}
+.ticket-notch.left { left: -9px; }
+.ticket-notch.right { right: -9px; }
+
+.ticket-head { display: flex; justify-content: space-between; align-items: baseline; }
+.ticket-shop { font-size: 12px; color: var(--gold-soft); }
+.ticket-tag {
+  font-size: 10px; padding: 2px 7px; border-radius: 999px;
+  border: 1px solid rgba(196, 148, 44, 0.6); color: var(--gold);
+}
+
+.ticket-rate { display: flex; align-items: baseline; gap: 6px; }
+.rate-num {
+  font-size: 62px; font-weight: 700; line-height: 1;
+  color: var(--gold);
+  letter-spacing: -2px;
+  text-shadow: 0 0 26px rgba(255, 201, 60, 0.35);
+}
+.rate-pct { font-size: 26px; margin-left: 2px; }
+.rate-label { font-size: 11px; color: var(--dim); }
+
+.ticket-meta { font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 6px; }
+.ticket-meta .dot { opacity: 0.6; }
+
+.ticket-count { display: flex; align-items: baseline; justify-content: space-between; margin-top: 2px; }
+.count-label { font-size: 10px; color: var(--dim); }
+.count-num {
+  font-size: 22px; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+.count-num.hot { color: var(--danger); }
+
+.ticket-bar { height: 5px; border-radius: 3px; background: rgba(96, 72, 36, 0.5); overflow: hidden; }
+.ticket-bar-fill {
+  display: block; height: 100%; width: 30%;
+  background: linear-gradient(90deg, rgba(255, 201, 60, 0.2), var(--gold));
+  animation: barSweep 3.2s linear infinite;
+}
+@keyframes barSweep { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+
+.ticket-perf {
+  height: 1px; margin: 10px -16px 0;
+  background: repeating-linear-gradient(90deg, rgba(196, 148, 44, 0.55) 0 6px, transparent 6px 12px);
+}
+.ticket-stub {
+  display: flex; justify-content: space-between;
+  padding: 8px 0 10px;
+  font-size: 10px; color: var(--dim);
+  letter-spacing: 1px;
+}
+
+/* 钩子 + 按钮 */
+.title-hook { display: flex; flex-direction: column; gap: 2px; }
+.title-hook b { font-size: 16px; color: var(--text); }
+.title-hook span { font-size: 13px; color: var(--dim); }
+
+.btn.pulse { animation: btnPulse 2.2s ease-in-out infinite; }
+@keyframes btnPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 201, 60, 0.42); }
+  55% { box-shadow: 0 0 0 12px rgba(255, 201, 60, 0); }
+}
+
+.title-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.title-tool { flex: 1 1 0; height: 38px; }
+.title-reset { height: 32px; color: var(--dim); }
+.title-foot { font-size: 9px; color: rgba(176, 154, 122, 0.7); text-align: center; }
+
 </style>
 </head>
 <body>
@@ -3309,22 +3444,69 @@ html, body {
   // =========================================================================
   function renderTitle() {
     app.innerHTML = '';
-    const s = el('div', 'screen dark');
-    s.style.justifyContent = 'center';
-    s.appendChild(el('div', 'hero-title', '黄牛模拟器'));
-    const card = el('div', 'talk');
-    card.appendChild(el('div', 'talk-who',
-      `<div class="name">第一章 · 抢它图啥</div><div class="sub">手机试玩版 · 饱了么壳 · 判定来自 js/game.js</div>`));
-    card.appendChild(el('div', 'hairline'));
-    card.appendChild(el('div', 'talk-text', esc(
-      '一个号只够坐两个人。三个朋友？加号。\n\n' +
-      '这是 Maker 版（UrhoX）的壳与文案，搬到网页版跑：取号界面是「饱了么」，' +
-      '判定、保底、等级、风控全部走原版引擎。')));
-    s.appendChild(card);
+    const run = app2.run;
+    const hasSave = !!run;
+    const flags = (run && run.flags) || {};
+    const endings = (flags.endingA ? 1 : 0) + (flags.endingB ? 1 : 0);
+    const day = hasSave ? (run.day || 1) : 1;
+    const money = hasSave ? (run.money || 0) : 0;
 
+    const s = el('div', 'screen title-screen');
+
+    // ---- 顶部品牌行 ----
+    const hero = el('div', 'title-hero');
+    hero.innerHTML = `
+      <div class="hero-line">
+        <span class="brand-mark">黄牛模拟器</span>
+        <span class="brand-sub">12+</span>
+      </div>
+      <div class="hero-big">抢<span class="hero-big-accent">不</span>到</div>
+      <div class="hero-sub">的，永远抢不到。</div>
+      <div class="hero-tags">
+        <span>黑色幽默</span><span>抢号模拟</span><span>两种结局</span>
+      </div>`;
+    s.appendChild(hero);
+
+    // ---- 票根主视觉：0.3% 就是全部论点 ----
+    const ticket = el('div', 'hero-ticket');
+    ticket.innerHTML = `
+      <div class="ticket-notch left"></div>
+      <div class="ticket-notch right"></div>
+      <div class="ticket-head">
+        <span class="ticket-shop">山城老灶 · 悬崖火锅</span>
+        <span class="ticket-tag">今晚 19:30</span>
+      </div>
+      <div class="ticket-rate">
+        <span class="rate-num">0.3<span class="rate-pct">%</span></span>
+        <span class="rate-label">中签率</span>
+      </div>
+      <div class="ticket-meta">
+        <span>全网 3 个号</span>
+        <span class="dot">·</span>
+        <span>6,120 人在等</span>
+      </div>
+      <div class="ticket-count">
+        <span class="count-label">距放号</span>
+        <span class="count-num" data-role="titleClock">03.00</span>
+      </div>
+      <div class="ticket-bar"><span class="ticket-bar-fill"></span></div>
+      <div class="ticket-perf"></div>
+      <div class="ticket-stub">
+        <span>NO. ${hasSave ? 'D' + day : 'D1'}</span>
+        <span>${hasSave ? '余额 ¥' + money : '新的一局'}</span>
+      </div>`;
+    s.appendChild(ticket);
+
+    // ---- 一句话钩子 ----
+    const hook = el('div', 'title-hook');
+    hook.innerHTML = `
+      <b>一个号只够坐两个人。</b>
+      <span>三个朋友？加号。</span>`;
+    s.appendChild(hook);
+
+    // ---- 主按钮（脉动）----
     const act = el('div', 'actions');
-    const hasSave = !!app2.run;
-    const b1 = el('button', 'btn btn-primary', hasSave ? '继续第一章' : '开始第一章');
+    const b1 = el('button', 'btn btn-primary pulse', hasSave ? '继续抢（第 ' + day + ' 天）' : '开抢 · 第一章');
     b1.onclick = () => {
       if (hasSave) { go('story'); return; }
       app2.run = freshRun();
@@ -3332,21 +3514,42 @@ html, body {
       go('story');
     };
     act.appendChild(b1);
-    const shopBtn = el('button', 'btn btn-ghost', '装备店（用钱换手感）');
-    shopBtn.onclick = () => { if (!app2.run) app2.run = freshRun(); go('shop'); };
-    act.appendChild(shopBtn);
+
+    const row = el('div', 'title-row');
+    const shopBtn = el('button', 'tool-btn title-tool', '装备店');
+    shopBtn.onclick = () => { if (!app2.run) { app2.run = freshRun(); save(); } go('shop'); };
+    const endBtn = el('button', 'tool-btn title-tool', `结局 ${endings}/2`);
+    endBtn.onclick = () => toast(endings === 0 ? '还没通关过，先抢吧' : `已达成 ${endings} 个结局`);
+    row.appendChild(shopBtn);
+    row.appendChild(endBtn);
+    act.appendChild(row);
 
     if (hasSave) {
-      const b2 = el('button', 'btn btn-ghost', '重新开始（清空本版本存档）');
-      b2.onclick = () => {
+      const reset = el('button', 'tool-btn title-reset', '清档重来');
+      reset.onclick = () => {
         app2.run = freshRun();
         save();
         go('story');
       };
-      act.appendChild(b2);
+      act.appendChild(reset);
     }
     s.appendChild(act);
+
+    s.appendChild(el('div', 'title-foot',
+      '虚构品牌 · 无真实平台与票务 · 判定与保底来自 js/game.js'));
     app.appendChild(s);
+
+    // 票根倒计时：3.2 秒一轮，归零那一刻就是"放号"
+    if (app2.titleTimer) clearInterval(app2.titleTimer);
+    let left = 3.2;
+    app2.titleTimer = setInterval(() => {
+      const elClock = document.querySelector('[data-role="titleClock"]');
+      if (!elClock) { clearInterval(app2.titleTimer); app2.titleTimer = null; return; }
+      left -= 0.05;
+      if (left <= 0) left = 3.2;
+      elClock.textContent = left.toFixed(2);
+      elClock.classList.toggle('hot', left <= 0.6);
+    }, 50);
   }
 
   // =========================================================================
