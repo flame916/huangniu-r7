@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow, noarchive">
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4556,6 +4558,7 @@ html, body {
     save();
     app2.lastResult = {
       taskId: buy.taskId,
+      gotDay: run.day || 1,
       myNo,
       results: buy.results.slice(),
       score,
@@ -5438,14 +5441,16 @@ html, body {
     // 取号区
     const m = buy.meta || {};
     const poolSt = buy.pool ? R.poolStats(buy.pool) : null;
-    const calling = poolSt && poolSt.calling ? poolSt.calling : '—';
+    const mineNo = poolSt && poolSt.myNos && poolSt.myNos.length
+      ? poolSt.myNos[poolSt.myNos.length - 1] : null;
+    const calling = mineNo || (poolSt && poolSt.calling ? poolSt.calling : '—');
     const poolTotal = (poolSt && poolSt.total) || m.pool || 18;
     const poolLeft = poolSt ? poolSt.free : Math.max(0, poolTotal - buy.results.filter(r => r.id !== 'miss').length);
     const zone = el('div', 'bao-card');
     zone.innerHTML = `
       <div class="calling-row">
         <div>
-          <div class="calling-label">当前叫号</div>
+          <div class="calling-label">${mineNo ? '你手上的号' : '当前叫号'}</div>
           <div class="calling-no">${esc(String(calling))}</div>
         </div>
         <div class="queue-col">
@@ -5456,6 +5461,7 @@ html, body {
       <div class="gap8"></div>
       <div class="kv"><span>今日放出的普通桌号</span><span class="v">${poolTotal} 个</span></div>
       <div class="kv"><span>放号区间（${buy.poolPrefix === 'B' ? '包间号' : '大厅号'}）</span><span class="v">${poolSt && poolSt.range ? esc(poolSt.range) : '—'}</span></div>
+      <div class="kv"><span>下一个放号</span><span class="v">${esc(poolSt && poolSt.calling ? poolSt.calling : '—')}</span></div>
       <div class="kv"><span>到店可用时段</span><span class="v">今晚 18:00 - 22:00</span></div>
       <div class="kv"><span>本任务目标</span><span class="v">${esc(t.goal)}</span></div>
       <div class="stock-row">
@@ -5634,13 +5640,25 @@ html, body {
       // 先算一次：万一回来的时候已经过号了
       R.pruneExpired(buy.pool, Date.now());
       const expiredNow = R.poolStats(buy.pool).myNos.indexOf(r.myNo) < 0;
-      const ticket = el('div', 'draw-result win');
+      const st = R.poolStats(buy.pool);
+      // 你的号到底轮到了没：同一个池子里的"当前叫号"才能比
+      const callingNow = st.calling || null;
+      const numOf = n => parseInt(String(n || '').replace(/\D/g, ''), 10) || 0;
+      const passed = expiredNow;   // 只有超时未核销才算过号
+      const taskName = (D.TASKS[r.taskId] || {}).name || r.taskId;
+      const gotDay = r.gotDay || (app2.run && app2.run.day) || 1;
+      const ticket = el('div', 'draw-result ' + (passed ? 'lose' : 'win'));
       ticket.innerHTML = `
-        <div class="draw-title">你的号 · ${esc(r.myNo)}</div>
-        <div class="draw-row"><span>本次放号</span><span class="v">${esc(R.poolStats(buy.pool).range || '—')}</span></div>
+        <div class="draw-title">${passed ? '号已过号 · 作废' : '你的号 · ' + esc(r.myNo)}</div>
+        <div class="draw-row"><span>有效号码</span><span class="v">${esc(r.myNo)}</span></div>
+        <div class="draw-row"><span>下一个放号</span><span class="v">${esc(callingNow || '—')}</span></div>
+        <div class="draw-row"><span>取号归属</span><span class="v">第 ${gotDay} 天 · ${esc(taskName)}</span></div>
+        <div class="draw-row"><span>本次放号</span><span class="v">${esc(st.range || '—')}</span></div>
         <div class="draw-row"><span>过号作废</span><span class="v pay" data-role="noLeft">10:00</span></div>
-        <div class="draw-row"><span>剩余号数</span><span class="v">${R.poolStats(buy.pool).free} 个</span></div>
-        <div class="draw-note">号子可转让给好友，转让后不可撤回</div>`;
+        <div class="draw-row"><span>剩余号数</span><span class="v">${st.free} 个</span></div>
+        <div class="draw-note">${passed
+          ? '这个号已经叫过去了，不能再用——重新取一个号才算抢到。'
+          : '号子可转让给好友，转让后不可撤回'}</div>`;
       const transfer = el('button', 'btn btn-ghost', '加价转让 +¥80（风控 +4）');
       if (expiredNow) {
         transfer.textContent = '已过号作废，转让失效';
