@@ -47,6 +47,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
+  overflow-x: clip;
   margin: 0;
   padding: 0;
   height: 100%;
@@ -379,7 +380,7 @@ html, body {
   height: 46px;
   border-radius: 999px;          /* 胶囊，不再是一条横贯屏幕的大板子 */
   background: var(--bao-brand);
-  color: #fff;
+  color: var(--paper);
   font-size: 17px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -402,7 +403,7 @@ html, body {
 
 .trap {
   position: absolute; right: 16px; top: 43%;
-  background: var(--bao-warn); color: #fff;
+  background: var(--bao-warn); color: var(--paper);
   border: 0; border-radius: 20px; height: 40px; padding: 0 16px;
   font-size: 12px; font-weight: 700; font-family: inherit;
   box-shadow: 0 6px 16px rgba(240, 155, 42, 0.35);
@@ -620,10 +621,12 @@ html, body {
 .rapid-track { position: relative; overflow: hidden; }
 .rapid-fill {
   position: absolute; left: 0; top: 0; bottom: 0;
-  width: 0%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
   background: linear-gradient(90deg, var(--bao-brand), var(--bao-brand-dk));
   border-radius: 6px;
-  transition: width 0.06s linear;
+  transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .rapid-num {
   display: flex; justify-content: space-between;
@@ -649,7 +652,7 @@ html, body {
   background: var(--bao-bg);
   color: var(--bao-text);
 }
-.mao .bao-tap { color: #FFFFFF; }
+.mao .bao-tap { color: var(--paper); }
 .mao .pill { background: rgba(255, 61, 127, 0.14); color: var(--bao-brand); }
 .mao .stock { color: var(--bao-brand); }
 .mao .zone { background: rgba(255, 61, 127, 0.22); }
@@ -694,7 +697,7 @@ html, body {
   font-size: 30px;
   font-weight: 700;
   letter-spacing: 2px;
-  color: #FFFFFF;
+  color: var(--paper);
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 .poster-sub { position: relative; font-size: 11px; color: rgba(240, 220, 235, 0.85); }
@@ -733,7 +736,7 @@ html, body {
 .dao .pill { background: rgba(255, 176, 0, 0.14); color: #8A5A00; }
 .dao .pill.ok { background: rgba(22, 160, 106, 0.12); color: #16A06A; }
 .dao .stock { color: var(--bao-danger); }
-.dao .trap { background: var(--bao-danger); color: #fff; }
+.dao .trap { background: var(--bao-danger); color: var(--paper); }
 
 .dao-search { padding: 8px 12px; }
 .search-row { display: flex; align-items: center; gap: 10px; }
@@ -763,7 +766,7 @@ html, body {
   padding: 3px 8px;
   border-radius: 4px;
   background: rgba(232, 58, 46, 0.9);
-  color: #fff;
+  color: var(--paper);
 }
 .dao-price-row { display: flex; align-items: baseline; gap: 8px; }
 .dao-price { font-size: 26px; font-weight: 700; color: var(--bao-danger); }
@@ -808,7 +811,7 @@ html, body {
   background: var(--bao-bg);
   color: var(--bao-text);
 }
-.tie .bao-tap { color: #FFFFFF; }
+.tie .bao-tap { color: var(--paper); }
 .tie .zone { background: rgba(32, 96, 178, 0.18); }
 .tie .zone-core { background: rgba(32, 96, 178, 0.75); }
 .tie .marker { background: #18202C; }
@@ -816,7 +819,7 @@ html, body {
 .tie .pill { background: rgba(32, 96, 178, 0.10); color: #2060B2; }
 .tie .pill.dim { background: #EEF2F7; color: #56637A; }
 .tie .stock { color: var(--bao-brand); }
-.tie .trap { background: var(--bao-warn); color: #fff; }
+.tie .trap { background: var(--bao-warn); color: var(--paper); }
 
 .tie-trip { gap: 8px; }
 .trip-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
@@ -1039,7 +1042,7 @@ html, body {
   height: 22px;
   margin-top: -11px;
   border-radius: 50%;
-  background: #FFFFFF;
+  background: var(--paper);
   border: 3px solid var(--bao-brand);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
   pointer-events: none;
@@ -1081,7 +1084,7 @@ html, body {
 }
 .bobo .spot-card .mark { color: #FFD642; }
 .mao .spot-card { background: #1B1B24; }
-.dao .spot-card { background: #FFFFFF; }
+.dao .spot-card { background: var(--paper); }
 
 /* ---- 凑人头报名（crowd）：2×4 人头卡 + 预估中签率 ---- */
 .crowd-grid {
@@ -1154,7 +1157,7 @@ html, body {
   cursor: pointer;
   touch-action: manipulation;
 }
-.report-btn { border: 0; background: var(--bao-danger); color: #fff; }
+.report-btn { border: 0; background: var(--bao-danger); color: var(--paper); }
 .report-skip { border: 1px solid var(--bao-line); background: transparent; color: var(--bao-dim); }
 .report-row .report-st { font-size: 10px; color: var(--bao-dim); flex: 0 0 auto; }
 .report-row.hit { border-color: #16A06A; background: rgba(22, 160, 106, 0.10); }
@@ -1237,7 +1240,7 @@ html, body {
   border-radius: 12px;
   border: 0;
   background: var(--bao-danger);
-  color: #fff;
+  color: var(--paper);
   font-family: inherit;
   font-size: 15px;
   font-weight: 700;
@@ -1644,6 +1647,173 @@ html, body {
   pointer-events: none;
   z-index: 3;
 }
+
+/* ============================================================================
+   门禁补丁（来自 Hallmark The Floor）—— 只补"不该缺的东西"，不改设计
+   26a 焦点环 / 27 减少动效 / 7a 纯白偏色
+   ============================================================================ */
+:root {
+  --paper: #FBF3E6;          /* 代替纯 #fff：向暖色偏移 */
+  --focus-ring: #FFD166;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 数字展示用等宽数字，跳动时不抖 */
+.rate-num, .count-num, .clock, .draw-row .v, .hud .v { font-variant-numeric: tabular-nums; }
+
+
+/* 剧情 / 场景用色（都从这里取，别再写字面量） */
+:root {
+  --story-tex: rgba(255, 226, 168, 0.016);
+  --story-tex-strong: rgba(255, 226, 168, 0.02);
+  --story-inset: rgba(255, 226, 168, 0.07);
+  --story-inset-strong: rgba(255, 236, 194, 0.16);
+  --story-a: #33251A;
+  --story-b: #241A12;
+  --story-c: #1C140E;
+  --story-sys-a: #3D2A16;
+  --story-sys-b: #2A1E12;
+  --story-sys-c: #1E150D;
+  --story-line: rgba(196, 148, 44, 0.45);
+  --story-wash: rgba(255, 201, 60, 0.06);
+  --story-dot: rgba(176, 154, 122, 0.32);
+  --story-dot-done: rgba(255, 201, 60, 0.45);
+  --story-glow: rgba(255, 201, 60, 0.55);
+  --story-avatar-line: rgba(255, 201, 60, 0.5);
+  --story-avatar-a: rgba(255, 201, 60, 0.16);
+  --story-avatar-b: rgba(255, 201, 60, 0.04);
+  --story-scene-line: rgba(96, 72, 36, 0.55);
+  --story-scrim: rgba(10, 7, 5, 0.88);
+  --shadow-38: rgba(0, 0, 0, 0.38);
+}
+/* ============================================================================
+   剧情界面（story-card）：一句戏 = 一张纸，字排版是主角
+   ============================================================================ */
+.story-card.talk {
+  padding: 18px 18px 16px;
+  border-radius: 18px;
+  gap: 12px;
+  border-left-width: 3px;
+  background:
+    repeating-linear-gradient(180deg, var(--story-tex) 0 2px, transparent 2px 5px),
+    linear-gradient(168deg, var(--story-a) 0%, var(--story-b) 62%, var(--story-c) 100%);
+  box-shadow: 0 18px 40px var(--shadow-38), inset 0 1px 0 var(--story-inset);
+}
+.story-card.talk.sys {
+  background:
+    repeating-linear-gradient(180deg, var(--story-tex-strong) 0 2px, transparent 2px 5px),
+    linear-gradient(168deg, var(--story-sys-a) 0%, var(--story-sys-b) 60%, var(--story-sys-c) 100%);
+}
+
+/* 顶部：章节 + 点阵进度 */
+.story-card .talk-meta { gap: 10px; margin-bottom: 0; }
+.story-card .meta-chapter {
+  font-size: 11px;
+  color: var(--gold-soft);
+  letter-spacing: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--story-line);
+  background: var(--story-wash);
+}
+.story-card .meta-seq {
+  font-size: 10px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+.story-card .story-dots { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.story-card .story-dots i {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--story-dot);
+  display: block;
+}
+.story-card .story-dots i.done { background: var(--story-dot-done); }
+.story-card .story-dots i.now {
+  width: 18px;
+  background: var(--gold);
+  box-shadow: 0 0 12px var(--story-glow);
+}
+
+/* 说话人 */
+.story-card .avatar {
+  width: 46px; height: 46px; border-radius: 14px;
+  font-size: 19px; font-weight: 800;
+  background: linear-gradient(160deg, var(--story-avatar-a), var(--story-avatar-b));
+  border-color: var(--story-avatar-line);
+  box-shadow: inset 0 1px 0 var(--story-inset-strong);
+}
+.story-card .talk-who .name { font-size: 15px; letter-spacing: 0.2px; }
+.story-card .talk-who .sub { font-size: 11px; line-height: 1.5; }
+
+/* 正文：这是主角 */
+.story-card .talk-text {
+  font-size: 19px;
+  line-height: 1.78;
+  letter-spacing: 0.3px;
+  color: var(--text);
+  padding: 2px 0 6px;
+}
+.story-card .talk-text b { color: var(--gold); font-weight: 700; }
+.story-card .talk-text .q { color: var(--gold-soft); }
+.story-card .talk-text .caret {
+  display: inline-block; width: 2px; height: 1.05em;
+  background: var(--gold); vertical-align: -0.16em;
+  animation: caretBlink 1s steps(1) infinite;
+}
+@keyframes caretBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/* 角色标签：小字，不加字距 */
+.story-card .role-tag {
+  font-size: 10px;
+  letter-spacing: 0;
+  padding: 2px 8px;
+}
+
+/* 剧情场景条：填掉中间那片空白，给"在门口排队"的氛围 */
+.story-scene {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 140px;
+  max-height: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--story-scene-line);
+  background: var(--bg-deep);
+}
+.story-scene .scene-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.story-scene::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 84px;
+  background: linear-gradient(180deg, transparent 0%, var(--story-scrim) 72%);
+  pointer-events: none;
+}
+.story-scene .scene-label {
+  position: absolute;
+  left: 14px; bottom: 12px;
+  z-index: 1;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.story-scene .scene-label b {
+  font-size: 15px; font-weight: 700; color: var(--gold-soft);
+  letter-spacing: 1px;
+}
+.story-scene .scene-label span { font-size: 10px; color: var(--dim); letter-spacing: 0; }
 
 </style>
 </head>
@@ -3752,6 +3922,76 @@ html, body {
 
   let typing = null;   // { full, shown, timer }
 
+
+  // 剧情场景条：没有美术资源，用剪影 + 号码屏 + 雨把"门口排队"演出来
+  function storySceneSvg(chapter) {
+    const key = chapter.key;
+    const tone = key === 2 ? 'pink' : key === 3 ? 'violet' : key === 4 ? 'green' : 'ember';
+    const sign = key === 2 ? '潮玩 · 限定' : key === 3 ? 'LIVE · 今晚' : key === 4 ? '同城 · 现货' : '悬崖火锅';
+    const board = key === 2 ? 'A113' : key === 3 ? 'C207' : key === 4 ? 'D019' : 'A485';
+
+    const crowd = [24, 68, 112, 156, 200, 244, 288, 332, 366].map((x, i) => {
+      const h = 52 + (i % 3) * 10;
+      const y = 300 - h;
+      return `<g opacity="${(0.55 + (i % 4) * 0.11).toFixed(2)}">
+        <circle cx="${x}" cy="${y + 8}" r="7.5" fill="#08060A"/>
+        <path d="M${x - 11} 300 q0 -${h - 16} 11 -${h - 16} q11 0 11 ${h - 16} z" fill="#08060A"/>
+        <rect x="${x - 4}" y="${y + 26}" width="8" height="13" rx="2" fill="#FFC93C" opacity="0.55"/>
+        <ellipse cx="${x}" cy="${y + 32}" rx="16" ry="13" fill="url(#sc-glow)" opacity="0.5"/>
+      </g>`;
+    }).join('');
+
+    const rain = Array.from({ length: 30 }).map((_, i) => {
+      const x = ((i * 47) % 372) + 6;
+      const y = (i * 61) % 260;
+      return `<line x1="${x}" y1="${y}" x2="${x - 3}" y2="${y + 18}" stroke="#C9BFA8" stroke-width="1" opacity="0.09"/>`;
+    }).join('');
+
+    return `<svg class="scene-svg tone-${tone}" viewBox="0 0 380 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="sc-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#20150C"/><stop offset="0.55" stop-color="#120C08"/><stop offset="1" stop-color="#0A0705"/>
+        </linearGradient>
+        <radialGradient id="sc-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#FF9A3C" stop-opacity="0.45"/><stop offset="1" stop-color="#FF9A3C" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="sc-door" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#FFD98A" stop-opacity="0.85"/><stop offset="1" stop-color="#FF9A3C" stop-opacity="0.25"/>
+        </linearGradient>
+      </defs>
+      <rect width="380" height="300" fill="url(#sc-bg)"/>
+      <ellipse cx="250" cy="70" rx="170" ry="90" fill="url(#sc-glow)"/>
+
+      <!-- 店招 -->
+      <g>
+        <rect x="196" y="30" width="150" height="38" rx="6" fill="#1E1409" stroke="#C4942C" stroke-opacity="0.6"/>
+        <text x="271" y="55" text-anchor="middle" font-size="15" font-weight="700"
+              fill="#FFC93C" opacity="0.95" font-family="sans-serif">${sign}</text>
+        <rect x="196" y="68" width="150" height="3" rx="1.5" fill="#FFC93C" opacity="0.35"/>
+      </g>
+
+      <!-- 取号屏 -->
+      <g>
+        <rect x="26" y="122" width="104" height="52" rx="5" fill="#100A07" stroke="#7A3B2A" stroke-opacity="0.75"/>
+        <text x="38" y="140" font-size="9" fill="#B0654A" font-family="sans-serif" opacity="0.9">当前叫号</text>
+        <text x="38" y="162" font-size="21" font-weight="700" fill="#FF584A" font-family="monospace">${board}</text>
+        <ellipse cx="78" cy="148" rx="62" ry="34" fill="url(#sc-glow)" opacity="0.35"/>
+      </g>
+
+      <!-- 亮着的门：人是从这儿进去的 -->
+      <g>
+        <rect x="196" y="150" width="66" height="102" rx="4" fill="#2A1B0E"/>
+        <rect x="200" y="154" width="58" height="98" rx="3" fill="url(#sc-door)"/>
+        <path d="M258 252 L318 252 L308 196 L268 196 Z" fill="#FFC93C" opacity="0.10"/>
+      </g>
+
+      <!-- 地面 -->
+      <rect x="0" y="252" width="380" height="48" fill="#0B0806" opacity="0.9"/>
+      ${crowd}
+      ${rain}
+    </svg>`;
+  }
+
   function renderStory() {
     const run = app2.run;
     const node = D.STORY[run.nodeId];
@@ -3773,15 +4013,21 @@ html, body {
     }
     const tone = isSys ? 'sys' : isNarr ? 'nar' : 'role';
 
-    const card = el('div', 'talk ' + (isSys ? 'sys ' : '') + 'tone-' + tone);
+    const card = el('div', 'talk story-card ' + (isSys ? 'sys ' : '') + 'tone-' + tone);
 
     // 顶部：章节 + 句序
     const meta = el('div', 'talk-meta');
+    const DOT_MAX = 21;
+    const dotCount = Math.min(total, DOT_MAX);
+    const dotNow = Math.min(seq, DOT_MAX);
+    let dots = '';
+    for (let i = 1; i <= dotCount; i++) {
+      dots += `<i class="${i < dotNow ? 'done' : i === dotNow ? 'now' : ''}"></i>`;
+    }
     meta.innerHTML = `
-      <span class="meta-chip">${esc(chapter.name)}</span>
-      <span class="meta-chip weak">${esc(chapter.sub || '')}</span>
-      <span class="spacer"></span>
-      <span class="meta-seq">${seq} / ${total}</span>`;
+      <span class="meta-chapter">${esc(chapter.name)}</span>
+      <span class="story-dots">${dots}</span>
+      <span class="meta-seq">${seq}/${total}</span>`;
     card.appendChild(meta);
 
     const head = el('div', 'talk-head');
@@ -3840,7 +4086,10 @@ html, body {
     };
     s.appendChild(card);
 
-    s.appendChild(el('div', 'watermark', esc(chapter.name)));
+    const scene = el('div', 'story-scene');
+    scene.innerHTML = storySceneSvg(chapter) +
+      `<div class="scene-label"><b>${esc(chapter.name)}</b><span>${esc(chapter.sub || '')}</span></div>`;
+    s.appendChild(scene);
 
     const act = el('div', 'actions');
     let advanceFn = null;      // 纯剧情节点才有：点卡片 = 继续
@@ -4385,7 +4634,7 @@ html, body {
       const p = Math.min(1, buy.taps / buy.rapidTarget);
       const bar = document.querySelector('[data-role="rapidFill"]');
       const num = document.querySelector('[data-role="rapidNum"]');
-      if (bar) bar.style.width = (p * 100).toFixed(1) + '%';
+      if (bar) bar.style.transform = 'scaleX(' + p.toFixed(3) + ')';
       if (num) num.textContent = buy.taps + ' / ' + buy.rapidTarget;
       return;
     }
@@ -5468,7 +5717,7 @@ html, body {
       // 连点玩法：进度条 = 连点占满分手速的比例
       const fill = el('div', 'rapid-fill');
       fill.setAttribute('data-role', 'rapidFill');
-      fill.style.width = (Math.min(1, buy.taps / buy.rapidTarget) * 100).toFixed(1) + '%';
+      fill.style.transform = 'scaleX(' + (Math.min(1, buy.taps / buy.rapidTarget)).toFixed(3) + ')';
       const rapidTrack = el('div', 'track rapid-track');
       rapidTrack.appendChild(fill);
       const numRow = el('div', 'rapid-num');
