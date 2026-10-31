@@ -2550,6 +2550,142 @@ html, body {
   .title-screen .title-hook { display: none; }
 }
 
+/* ============================ 进局前"怎么玩" ============================ */
+.howto-wrap { padding: 8px 2px 0; }
+.howto-card {
+  background: var(--cm-card);
+  border: 2px solid var(--cm-line);
+  border-radius: 18px;
+  box-shadow: var(--cm-shadow);
+  padding: 16px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.howto-head { display: flex; align-items: center; justify-content: space-between; }
+.howto-shell {
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px;
+  background: #FFE9B8; color: var(--cm-red-dark);
+  border: 2px solid var(--cm-line);
+}
+.howto-badge { font-size: 10px; color: var(--cm-ink-soft); }
+.howto-title { font-size: 24px; font-weight: 800; color: var(--cm-ink); letter-spacing: 1px; }
+.howto-goal {
+  font-size: 12px; color: var(--cm-ink-soft);
+  padding: 6px 10px;
+  background: var(--cm-paper);
+  border: 2px dashed rgba(42, 33, 24, 0.35);
+  border-radius: 10px;
+}
+.howto-steps { margin: 2px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.howto-steps li { font-size: 14px; line-height: 1.6; color: var(--cm-ink); }
+.howto-tip {
+  font-size: 11.5px; line-height: 1.6;
+  color: var(--cm-red-dark);
+  background: rgba(211, 69, 57, 0.08);
+  border: 2px solid rgba(211, 69, 57, 0.35);
+  border-radius: 10px;
+  padding: 7px 10px;
+}
+.howto-go { margin-top: 4px; }
+.bao .btn-primary, .howto-card .btn-primary {
+  background: linear-gradient(180deg, #E5564A, var(--cm-red) 45%, #B8372B) !important;
+  background-image: linear-gradient(180deg, #E5564A, var(--cm-red) 45%, #B8372B) !important;
+  background-blend-mode: normal !important;
+  border: 2px solid var(--cm-red-dark) !important;
+  color: #FFF7EA !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 0 var(--cm-red-dark) !important;
+  font-weight: 800;
+}
+
+/* ============================ 开 App 过场 ============================ */
+.launch-screen {
+  position: relative;
+  width: 100%; height: 100%;
+  background: linear-gradient(180deg, #2A2118 0%, #14100C 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.launch-phone {
+  width: 250px;
+  height: 470px;
+  border-radius: 30px;
+  border: 3px solid #0B0805;
+  background: linear-gradient(180deg, #3A2C20 0%, #211710 100%);
+  padding: 14px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: phoneIn 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes phoneIn {
+  from { transform: translateY(16px) scale(0.96); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.launch-bar { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255, 247, 234, 0.6); }
+.launch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 10px;
+  margin-top: 6px;
+}
+.launch-app { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.launch-app i {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--c);
+  color: #FFF7EA;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800; font-style: normal;
+  border: 2px solid rgba(11, 8, 5, 0.6);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+}
+.launch-app span { font-size: 9px; color: rgba(255, 247, 234, 0.72); }
+.launch-app.is-target i { animation: targetPop 900ms cubic-bezier(0.22, 1, 0.36, 1) 320ms both; }
+.launch-app.is-target span { color: #FFF7EA; }
+@keyframes targetPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.10); }
+  100% { transform: scale(1); }
+}
+.launch-dock {
+  margin-top: auto;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(255, 247, 234, 0.08);
+}
+/* 图标被"点开"后放大铺满 */
+.launch-open {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px;
+  background: var(--brand, #FF6A00);
+  opacity: 0;
+  transform: scale(0.55);
+  border-radius: 44px;
+  pointer-events: none;
+  transition: opacity 240ms ease-out, transform 320ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 320ms ease-out;
+}
+.launch-open.is-open {
+  opacity: 1;
+  transform: scale(1);
+  border-radius: 0;
+}
+.launch-open-icon {
+  width: 74px; height: 74px; border-radius: 20px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  color: #FFF;
+  font-size: 30px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.launch-open-name { font-size: 17px; font-weight: 800; color: #FFF; letter-spacing: 2px; }
+.launch-open-tip { font-size: 11px; color: rgba(255, 255, 255, 0.75); }
+
 </style>
 </head>
 <body>
@@ -4707,6 +4843,70 @@ html, body {
   let typing = null;   // { full, shown, timer }
 
 
+
+  // 每个小游戏进局前的"怎么玩"说明（按模式，不按关卡）
+  const HOWTO = {
+    timing: {
+      title: '读秒抢号',
+      steps: ['盯着读秒条，指针进入中间绿色窗口时点「立即取号」', '越靠正中，这一局的表現分越高', '三局里判定通过就算抢到，抢到立刻结束'],
+      tip: '点早了算"太早"，点晚了号就没了',
+    },
+    rapid: {
+      title: '连点抢票',
+      steps: ['倒计时开始后连续点按钮', '点得越多，表現分越高', '手指别停，停了不扣分但也不加分'],
+      tip: '这一关比的是手速，不是准头',
+    },
+    multi: {
+      title: '多线抢票',
+      steps: ['三个窗口会轮流亮起', '哪个亮就点哪个', '漏掉、点错都会掉分'],
+      tip: '三个场次同时开售，眼睛要跟上',
+    },
+    slide: {
+      title: '滑块选座',
+      steps: ['把滑块拖到亮起的座位段', '松手确认落点', '落在核心区算满分'],
+      tip: '手一抖就滑到隔壁座了',
+    },
+    spot: {
+      title: '验真票',
+      steps: ['点出带防伪星的真票', '假票是灰星，别点', '凑够数量就过'],
+      tip: '看错一张，老板就不信你了',
+    },
+    crowd: {
+      title: '凑人头',
+      steps: ['点「可报名」的人把人头凑够', '「号被占」的人点不动', '人头越多，中签率越高'],
+      tip: '这是替人排队，凑的是别人的名额',
+    },
+    report: {
+      title: '举报黄牛',
+      steps: ['看到黄牛发言点「举报」', '正常消息点「正常」', '误报扣得比漏报更多'],
+      tip: '举报成功会给一点补偿',
+    },
+    verify: {
+      title: '门店核销',
+      steps: ['按提示核对每个号的号码', '对了就核销，错了会提示', '核销完就过'],
+      tip: '这是你的号真正变成饭的时刻',
+    },
+    queue: {
+      title: '守队',
+      steps: ['守住你现在的位置', '有插队的就拦住', '被挤出去就前功尽弃'],
+      tip: '队伍会一直往前挤',
+    },
+    haggle: {
+      title: '验货议价',
+      steps: ['一次砍一点，看着对方反应', '砍太狠会直接谈崩', '压到目标价就算成功'],
+      tip: '砍崩了这单就没了',
+    },
+    market: {
+      title: '出货行情',
+      steps: ['挑一个渠道把货出手', '零售慢但价高，同行快但压价', '看行情决定什么时候卖'],
+      tip: '行情会随时间波动',
+    },
+  };
+
+  function howtoOf(mode) {
+    return HOWTO[mode] || HOWTO.timing;
+  }
+
   const CHAPTER_ART = {
     0: 'var(--art-scene)',
     1: 'var(--art-scene)',
@@ -5245,7 +5445,10 @@ html, body {
       };
     }
     if (buy.needCaptcha) buy.phase = 'captcha';
-    go('buy');
+    else buy.phase = 'howto';
+    const fromOutside = app2.screen !== 'buy' && app2.screen !== 'result';
+    app2.screen = 'buy';
+    if (fromOutside) { app2.screen = 'launch'; render(); } else render();
   }
 
   // 给验证题加上"人话"的辅助：倒计时、容错次数、可换一题
@@ -5297,7 +5500,7 @@ html, body {
     }
     G.clearReportFlag(app2.run);
     save();
-    buy.phase = 'intro';
+    buy.phase = 'howto';      // 验证过了也要先看"怎么玩"
     buy.t = 0;
     render();
   }
@@ -5928,6 +6131,50 @@ html, body {
   // 壳定义：饱了么（餐厅取号）/ 波波（潮玩抽签）
   // 壳只给长相和文案，判定与数值仍走 GameEngine
   // =========================================================================
+
+  // ---- 开 App 的过场动画 -----------------------------------------------------
+  const APP_ICONS = [
+    { key: 'bao', name: '饱了么', color: '#FF6A00', glyph: '饱' },
+    { key: 'bobo', name: '波波', color: '#7C6BF0', glyph: '波' },
+    { key: 'mao', name: '猫瞳', color: '#FF3D7F', glyph: '猫' },
+    { key: 'tie', name: '铁行', color: '#2060B2', glyph: '铁' },
+    { key: 'dao', name: '倒倒', color: '#16A06A', glyph: '倒' },
+    { key: 'cong', name: '大葱票务', color: '#D34539', glyph: '葱' },
+  ];
+
+  function renderLaunch() {
+    const shell = buy.shell || 'bao';
+    const target = APP_ICONS.find(a => a.key === shell) || APP_ICONS[0];
+    app.innerHTML = '';
+    const s = el('div', 'launch-screen');
+    s.style.setProperty('--brand', target.color);
+    s.innerHTML = `
+      <div class="launch-phone">
+        <div class="launch-bar"><span>9:41</span><span>▲ ▮</span></div>
+        <div class="launch-grid">
+          ${APP_ICONS.map(a => `
+            <div class="launch-app${a.key === target.key ? ' is-target' : ''}" style="--c:${a.color}">
+              <i>${esc(a.glyph)}</i><span>${esc(a.name)}</span>
+            </div>`).join('')}
+        </div>
+        <div class="launch-dock"></div>
+      </div>
+      <div class="launch-open">
+        <div class="launch-open-icon" style="--c:${target.color}">${esc(target.glyph)}</div>
+        <div class="launch-open-name">${esc(target.name)}</div>
+        <div class="launch-open-tip">正在打开…</div>
+      </div>`;
+    app.appendChild(s);
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const openEl = s.querySelector('.launch-open');
+    setTimeout(() => { if (openEl) openEl.classList.add('is-open'); }, reduce ? 40 : 620);
+    setTimeout(() => {
+      if (app2.screen !== 'launch') return;
+      app2.screen = 'buy';
+      render();
+    }, reduce ? 200 : 1250);
+  }
+
   const SHELL_DEFS = {
     bao: {
       id: 'bao',
@@ -6338,6 +6585,31 @@ html, body {
       `<span class="back">‹</span><span class="title">${esc(shell.title)}</span><span class="fav">${esc(shell.right)}</span>`));
     scroll.appendChild(el('div', 'bao-account',
       `<span>余额 ¥${esc(run.money || 0)}</span><span>会员 Lv.${(run.level || 0) + 1}</span><span>第 ${esc(run.day || 1)} 天</span>`));
+
+    // 怎么玩阶段：整屏只放说明卡
+    if (buy.phase === 'howto') {
+      const wrap2 = el('div', 'howto-wrap');
+      wrap2.appendChild(renderHowtoCard());
+      scroll.appendChild(wrap2);
+      const bar2 = el('div', 'bao-bottom');
+      bar2.innerHTML = `
+        <div class="clock-row">
+          <div>
+            <div class="clock-label">当前步骤</div>
+            <div class="clock" style="font-size:22px">看说明</div>
+          </div>
+          <div class="judge-col">
+            <span class="attempt">${esc(shell.roundUnit || '局')}前说明</span>
+            <span class="judge" style="color:var(--bao-brand)">读完再开始</span>
+          </div>
+        </div>`;
+      const fake = el('button', 'bao-tap', '先看说明');
+      fake.disabled = true;
+      bar2.appendChild(fake);
+      s.appendChild(bar2);
+      app.appendChild(s);
+      return;
+    }
 
     // 人机验证阶段：整屏只放验证卡，保证格子一定看得见、点得到
     if (buy.phase === 'captcha') {
@@ -6756,6 +7028,33 @@ html, body {
     scroll.appendChild(notes);
   }
 
+  // ---- 进局前的"怎么玩" -----------------------------------------------------
+  function renderHowtoCard() {
+    const h = howtoOf(buy.mode);
+    const taskDef = D.TASKS[buy.taskId] || {};
+    const shellName = { bao: '饱了么', bobo: '波波', mao: '猫瞳', tie: '铁行', dao: '倒倒', cong: '大葱票务' }[buy.shell] || 'App';
+    const card = el('div', 'howto-card');
+    card.innerHTML = `
+      <div class="howto-head">
+        <span class="howto-shell">${esc(shellName)}</span>
+        <span class="howto-badge">怎么玩 · 第 ${buy.round + 1} 局</span>
+      </div>
+      <div class="howto-title">${esc(h.title)}</div>
+      <div class="howto-goal">本关目标：${esc(taskDef.goal || '抢到手')}</div>
+      <ol class="howto-steps">
+        ${h.steps.map(s => `<li>${esc(s)}</li>`).join('')}
+      </ol>
+      ${h.tip ? `<div class="howto-tip">⚠ ${esc(h.tip)}</div>` : ''}`;
+    const go = el('button', 'btn btn-primary howto-go', '知道了，开始');
+    go.onclick = () => {
+      buy.phase = 'intro';
+      buy.t = 0;
+      render();
+    };
+    card.appendChild(go);
+    return card;
+  }
+
   // ---- 人机验证卡片 ---------------------------------------------------------
   function renderCaptchaCard() {
     const cap = buy.captcha;
@@ -7058,6 +7357,7 @@ html, body {
     if (typing) { clearInterval(typing.timer); typing = null; }
     switch (app2.screen) {
       case 'title': renderTitle(); break;
+      case 'launch': renderLaunch(); break;
       case 'chapter': renderChapter(); break;
       case 'story': renderStory(); break;
       case 'buy': renderBuy(); break;
