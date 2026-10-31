@@ -1535,6 +1535,8 @@ html, body {
 .title-tool { flex: 1 1 0; height: 38px; }
 .title-reset { height: 32px; color: var(--dim); }
 .title-foot { font-size: 9px; color: rgba(176, 154, 122, 0.7); text-align: center; }
+.title-stat { display: flex; justify-content: center; gap: 10px; font-size: 10px; color: rgba(176, 154, 122, 0.85); }
+.title-stat b { color: var(--gold); font-weight: 700; }
 
 /* 入场页背景层 */
 .title-bg {
@@ -1581,6 +1583,67 @@ html, body {
 .bao-bottom .verdict-big.lose .vb-mark { color: #C0392B; }
 .bao-bottom .verdict-big .vb-sub { color: #5C4A34; }
 .bao-bottom .bao-tap.ghost { background: rgba(0, 0, 0, 0.06); color: #5C4A34; border: 1px solid rgba(0, 0, 0, 0.10); }
+
+
+/* ============================ 票根堆封面 ============================ */
+.ticket-stack { position: relative; z-index: 1; }
+.ticket-stack .ghost-ticket.unused {
+  position: absolute;
+  left: 0; right: 0;
+  height: 100%;
+  border-radius: 14px;
+  border: 1px dashed rgba(196, 148, 44, 0.34);
+  background: linear-gradient(150deg, rgba(58, 42, 24, 0.5), rgba(24, 17, 11, 0.5));
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10px 14px;
+  pointer-events: none;
+}
+
+
+
+
+.ticket-stack .hero-ticket { position: relative; z-index: 2; }
+
+/* 巨型 0.3% 水印：整个封面的"论据" */
+.title-hero .watermark {
+  position: absolute;
+  right: -18px;
+  top: -18px;
+  transform: rotate(-8deg);
+  font-size: 112px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -6px;
+  color: rgba(255, 201, 60, 0.075);
+  pointer-events: none;
+  z-index: 0;
+  white-space: nowrap;
+}
+.title-hero .hero-line, .title-hero .hero-big, .title-hero .hero-sub, .title-hero .hero-tags {
+  position: relative;
+  z-index: 1;
+}
+
+/* 售罄章：压在票根右上角 */
+.hero-ticket .seal {
+  position: absolute;
+  top: 54px;
+  right: 2px;
+  transform: rotate(-12deg);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: rgba(232, 64, 62, 0.92);
+  border: 2.5px solid rgba(232, 64, 62, 0.78);
+  border-radius: 5px;
+  padding: 3px 10px;
+  background: rgba(232, 64, 62, 0.07);
+  box-shadow: 0 0 22px rgba(232, 64, 62, 0.18);
+  pointer-events: none;
+  z-index: 3;
+}
 
 </style>
 </head>
@@ -3493,80 +3556,30 @@ html, body {
   // 标题
   // =========================================================================
 
-  // 入场页背景：深夜排队 + 店招光晕 + 雨（纯内联 SVG，不加载任何图片）
+  // 入场页背景：只留暗角与纸感，主视觉交给"票根堆 + 售罄章"
   function titleBackground() {
-    const far = [];
-    let x = -10;
-    let seed = 7;
-    const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-    while (x < 400) {
-      const w = 24 + rnd() * 40;
-      const h = 60 + rnd() * 150;
-      far.push(`<rect x="${x.toFixed(0)}" y="${(360 - h).toFixed(0)}" width="${w.toFixed(0)}" height="${h.toFixed(0)}" fill="#150E08"/>`);
-      for (let wy = 360 - h + 12; wy < 350; wy += 18) {
-        for (let wx = x + 6; wx < x + w - 8; wx += 14) {
-          if (rnd() > 0.62) {
-            far.push(`<rect x="${wx.toFixed(0)}" y="${wy.toFixed(0)}" width="5" height="7" fill="#FFC93C" opacity="${(0.10 + rnd() * 0.18).toFixed(2)}"/>`);
-          }
-        }
-      }
-      x += w + 6;
-    }
-
-    // 排队的人群：每个人都举着手机在刷新（屏幕光就是"抢号"这件事本身）
-    const queue = [];
-    for (let i = 0; i < 10; i++) {
-      const t = i / 9;                       // 0 = 最远，1 = 最近
-      const qx = 12 + i * 41;
-      const qh = 74 + t * 46;
-      const qy = 838 - qh;
-      const head = 9 + t * 4;
-      queue.push(`<g opacity="${(0.55 + t * 0.45).toFixed(2)}">
-        <circle cx="${qx.toFixed(0)}" cy="${(qy + head).toFixed(0)}" r="${head.toFixed(1)}" fill="#0F0B11" stroke="#FFC93C" stroke-opacity="${(0.10 + t * 0.16).toFixed(2)}" stroke-width="1.1"/>
-        <path d="M${(qx - 15 - t * 5).toFixed(0)} ${(qy + qh).toFixed(0)} q0 -${(qh - head * 2).toFixed(0)} ${(15 + t * 5).toFixed(0)} -${(qh - head * 2).toFixed(0)} q${(15 + t * 5).toFixed(0)} 0 ${(15 + t * 5).toFixed(0)} ${(qh - head * 2).toFixed(0)} z" fill="#0F0B11" stroke="#FFC93C" stroke-opacity="${(0.08 + t * 0.12).toFixed(2)}" stroke-width="1.1"/>
-        <rect x="${(qx - 5).toFixed(0)}" y="${(qy + 30).toFixed(0)}" width="10" height="15" rx="2" fill="#FFC93C" opacity="${(0.30 + t * 0.35).toFixed(2)}"/>
-        <ellipse cx="${qx.toFixed(0)}" cy="${(qy + 37).toFixed(0)}" rx="20" ry="17" fill="url(#glow)" opacity="${(0.22 + t * 0.25).toFixed(2)}"/>
-      </g>`);
-    }
-
-    const rain = [];
-    for (let i = 0; i < 46; i++) {
-      const rx = rnd() * 400;
-      const ry = rnd() * 780;
-      rain.push(`<line x1="${rx.toFixed(0)}" y1="${ry.toFixed(0)}" x2="${(rx - 3).toFixed(0)}" y2="${(ry + 22).toFixed(0)}" stroke="#C9BFA8" stroke-width="1" opacity="${(0.05 + rnd() * 0.10).toFixed(2)}"/>`);
-    }
-
     return `<svg class="title-bg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
         <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#2E1D0E"/><stop offset="0.55" stop-color="#150E09"/><stop offset="1" stop-color="#0A0705"/>
+          <stop offset="0" stop-color="#2A1A0E"/><stop offset="0.5" stop-color="#140D08"/><stop offset="1" stop-color="#0A0705"/>
         </linearGradient>
         <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stop-color="#FF9A3C" stop-opacity="0.34"/><stop offset="1" stop-color="#FF9A3C" stop-opacity="0"/>
+          <stop offset="0" stop-color="#FF9A3C" stop-opacity="0.22"/><stop offset="1" stop-color="#FF9A3C" stop-opacity="0"/>
         </radialGradient>
-        <radialGradient id="vig" cx="0.5" cy="0.42" r="0.72">
-          <stop offset="0.55" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.65"/>
+        <radialGradient id="vig" cx="0.5" cy="0.4" r="0.75">
+          <stop offset="0.5" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.7"/>
         </radialGradient>
-        <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#0A0705" stop-opacity="0"/><stop offset="1" stop-color="#0A0705" stop-opacity="0.96"/>
-        </linearGradient>
+        <pattern id="grain" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="none"/>
+          <circle cx="1" cy="1" r="0.5" fill="#FFD9A0" opacity="0.05"/>
+          <circle cx="4" cy="3.5" r="0.4" fill="#FFD9A0" opacity="0.04"/>
+          <circle cx="2.5" cy="5" r="0.35" fill="#FFD9A0" opacity="0.03"/>
+        </pattern>
       </defs>
       <rect width="390" height="844" fill="url(#sky)"/>
-      <ellipse cx="255" cy="180" rx="200" ry="150" fill="url(#glow)"/>
-      ${far.join('')}
-      <!-- 店招：这是他们要抢的那家 -->
-      <g>
-        <rect x="132" y="392" width="126" height="52" rx="6" fill="#1E1409" stroke="#C4942C" stroke-opacity="0.55"/>
-        <text x="195" y="415" text-anchor="middle" font-size="15" font-weight="700" fill="#FFC93C" opacity="0.92" font-family="sans-serif">悬崖火锅</text>
-        <text x="195" y="433" text-anchor="middle" font-size="8" fill="#B09A7A" opacity="0.85" font-family="sans-serif">今晚 19:30 放号 · 3 个</text>
-        <ellipse cx="195" cy="420" rx="140" ry="60" fill="url(#glow)" opacity="0.5"/>
-      </g>
-      <rect x="0" y="440" width="390" height="404" fill="#0B0806" opacity="0.34"/>
-      <ellipse cx="195" cy="812" rx="260" ry="120" fill="#FF8A3C" opacity="0.10"/>
-      ${queue.join('')}
-      <g class="rain">${rain.join('')}</g>
+      <ellipse cx="200" cy="210" rx="230" ry="180" fill="url(#glow)"/>
+      <rect width="390" height="844" fill="url(#grain)"/>
       <rect width="390" height="844" fill="url(#vig)"/>
-      <rect x="0" y="792" width="390" height="52" fill="url(#fade)"/>
     </svg>`;
   }
 
@@ -3593,10 +3606,12 @@ html, body {
       <div class="hero-sub">的，永远抢不到。</div>
       <div class="hero-tags">
         <span>黑色幽默</span><span>抢号模拟</span><span>两种结局</span>
-      </div>`;
+      </div>
+      <div class="watermark" aria-hidden="true">0.3%</div>`;
     s.appendChild(hero);
 
-    // ---- 票根主视觉：0.3% 就是全部论点 ----
+    // ---- 主视觉：巨型 0.3% 水印 + 卡片上盖一枚「已售罄」红章 ----
+    const stack = el('div', 'ticket-stack');
     const ticket = el('div', 'hero-ticket');
     ticket.innerHTML = `
       <div class="ticket-notch left"></div>
@@ -3605,6 +3620,7 @@ html, body {
         <span class="ticket-shop">山城老灶 · 悬崖火锅</span>
         <span class="ticket-tag">今晚 19:30</span>
       </div>
+      <div class="seal" aria-hidden="true">已售罄</div>
       <div class="ticket-rate">
         <span class="rate-num">0.3<span class="rate-pct">%</span></span>
         <span class="rate-label">中签率</span>
@@ -3624,7 +3640,8 @@ html, body {
         <span>NO. ${hasSave ? 'D' + day : 'D1'}</span>
         <span>${hasSave ? '余额 ¥' + money : '新的一局'}</span>
       </div>`;
-    s.appendChild(ticket);
+    stack.appendChild(ticket);
+    s.appendChild(stack);
 
     // ---- 一句话钩子 ----
     const hook = el('div', 'title-hook');
@@ -3664,6 +3681,8 @@ html, body {
     }
     s.appendChild(act);
 
+    s.appendChild(el('div', 'title-stat',
+      `今晚已抢 <b>6,120</b> 次 · 中签 <b>3</b> 人 · 你排第 <b>9,271</b> 位`));
     s.appendChild(el('div', 'title-foot',
       '虚构品牌 · 无真实平台与票务 · 判定与保底来自 js/game.js'));
     app.appendChild(s);
