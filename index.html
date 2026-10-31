@@ -1815,6 +1815,63 @@ html, body {
 }
 .story-scene .scene-label span { font-size: 10px; color: var(--dim); letter-spacing: 0; }
 
+/* ============================================================================
+   人机验证卡：给提示、给时间、给容错
+   ============================================================================ */
+.cap-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cap-badge {
+  font-size: 10px; padding: 3px 9px; border-radius: 999px;
+  background: rgba(255, 106, 0, 0.10); color: var(--bao-brand, #FF6A00);
+  border: 1px solid rgba(255, 106, 0, 0.35);
+}
+.cap-time {
+  font-size: 13px; font-weight: 700; color: var(--bao-text, #2A1B12);
+  font-variant-numeric: tabular-nums;
+}
+.cap-ask { font-size: 15px; line-height: 1.6; color: var(--bao-text, #2A1B12); }
+.cap-target {
+  display: inline-block; min-width: 1.4em; text-align: center;
+  font-size: 26px; font-weight: 800; line-height: 1.1;
+  padding: 0 6px; margin: 0 2px;
+  color: var(--bao-brand, #FF6A00);
+  border-bottom: 3px solid rgba(255, 106, 0, 0.35);
+}
+.cap-progress { display: flex; gap: 5px; margin: 8px 0 2px; }
+.cap-progress i {
+  width: 22px; height: 5px; border-radius: 3px;
+  background: rgba(0, 0, 0, 0.10); display: block;
+}
+.cap-progress i.solo { width: 44px; }
+.cap-progress i.on { background: var(--bao-brand, #FF6A00); }
+.cap-hint { font-size: 11px; color: var(--bao-dim, #7A6A5C); line-height: 1.6; margin-top: 6px; }
+.cap-meta {
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: 10px; color: var(--bao-dim, #7A6A5C); margin-top: 6px;
+}
+.cap-meta .taunt { font-style: normal; opacity: 0.9; }
+.cap-bar {
+  height: 4px; border-radius: 2px; margin-top: 8px;
+  background: rgba(0, 0, 0, 0.08); overflow: hidden;
+}
+.cap-bar span {
+  display: block; height: 100%; width: 100%;
+  background: linear-gradient(90deg, rgba(255, 106, 0, 0.35), var(--bao-brand, #FF6A00));
+  transform: scaleX(1); transform-origin: left center;
+}
+.cap-swap {
+  width: 100%; margin-top: 10px; min-height: 40px;
+  border-radius: 10px; border: 1px dashed rgba(255, 106, 0, 0.45);
+  background: transparent; color: var(--bao-brand, #FF6A00);
+  font-size: 12px;
+}
+.cap-swap:disabled { opacity: 0.45; border-style: solid; color: var(--bao-dim, #7A6A5C); }
+.captcha-grid.shake { animation: capShake 0.32s ease-in-out; }
+@keyframes capShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
 </style>
 </head>
 <body>
@@ -4331,7 +4388,7 @@ html, body {
     }
     buy.myNo = null;
     buy.needCaptcha = taskNeedsCaptcha(taskId);
-    buy.captcha = buy.needCaptcha ? R.captchaOf(Math.random) : null;
+    buy.captcha = buy.needCaptcha ? prepCaptcha(R.captchaOf(Math.random)) : null;
     if (buy.mode === 'queue') {
       buy.totalMs = 9000;
       buy.queue = {
@@ -4410,13 +4467,50 @@ html, body {
     go('buy');
   }
 
-  // 验证通过 → 进读秒；失败 → 风控 +10 并换一题（与网页基准一致）
+  // 给验证题加上"人话"的辅助：倒计时、容错次数、可换一题
+  const CAPTCHA_SECONDS = 40;      // 原来没有限时，现在给足 40 秒
+  const CAPTCHA_TOLERANCE = 1;     // 点错 1 次不算失败
+  const CAPTCHA_SWAPS = 1;         // 换一题的机会
+
+  function prepCaptcha(cap) {
+    cap = cap || {};
+    cap.limitMs = CAPTCHA_SECONDS * 1000;
+    cap.leftMs = cap.limitMs;
+    cap.wrongs = 0;
+    cap.swapsLeft = CAPTCHA_SWAPS;
+    return cap;
+  }
+
+  function captchaSwap() {
+    const cap = buy.captcha;
+    if (!cap || cap.swapsLeft <= 0) return;
+    const left = cap.swapsLeft - 1;
+    buy.captcha = prepCaptcha(R.captchaOf(Math.random));
+    buy.captcha.swapsLeft = left;
+    toast('换了一道题 · 还剩 ' + left + ' 次');
+    render();
+  }
+
+  // 验证通过 → 进读秒；点错先给一次机会；用完/超时才失败（惩罚不变）
   function captchaFinish(ok) {
     if (!ok) {
+      const cap = buy.captcha || {};
+      if ((cap.wrongs || 0) < CAPTCHA_TOLERANCE) {
+        cap.wrongs = (cap.wrongs || 0) + 1;
+        toast('点错了 · 还能再试 ' + (CAPTCHA_TOLERANCE - cap.wrongs + 1) + ' 次');
+        const grid = document.querySelector('.captcha-grid');
+        if (grid) {
+          grid.classList.remove('shake');
+          void grid.offsetWidth;
+          grid.classList.add('shake');
+        }
+        render();
+        return;
+      }
       G.addRisk(app2.run, 10);
       save();
       toast('❌ 验证失败！风控 +10');
-      buy.captcha = R.captchaOf(Math.random);
+      buy.captcha = prepCaptcha(R.captchaOf(Math.random));
       render();
       return;
     }
@@ -4501,6 +4595,23 @@ html, body {
         m.litUntil = m.t + m.winMs;
         m.promptsLeft -= 1;
         m.nextAt = m.litUntil + 320;
+        render();
+      }
+      return;
+    }
+
+    if (buy.phase === 'captcha' && buy.captcha) {
+      const cap = buy.captcha;
+      cap.leftMs = Math.max(0, (cap.leftMs || 0) - dt);
+      const tEl = document.querySelector('[data-role="capTime"]');
+      const bar = document.querySelector('[data-role="capBar"]');
+      if (tEl) tEl.textContent = Math.ceil(cap.leftMs / 1000) + 's';
+      if (bar) bar.style.transform = 'scaleX(' + (cap.leftMs / (cap.limitMs || 1)).toFixed(3) + ')';
+      if (cap.leftMs <= 0) {
+        G.addRisk(app2.run, 10);
+        save();
+        toast('⏰ 超时了 · 风控 +10，换一道题');
+        buy.captcha = prepCaptcha(R.captchaOf(Math.random));
         render();
       }
       return;
@@ -5866,12 +5977,45 @@ html, body {
     const cap = buy.captcha;
     const card = el('div', 'bao-card captcha-card');
     const head = el('div', 'captcha-inst');
-    let instruction = '';
-    if (cap.kind === 'word') instruction = `请点击所有「${esc(cap.target)}」字（共 ${cap.need} 个）`;
-    else if (cap.kind === 'math') instruction = `${cap.a} + ${cap.b} = ?`;
-    else instruction = `请点击指向「${esc(cap.answer)}」的箭头`;
-    head.innerHTML = `<b>🤖 人机验证</b><br>${instruction}<br><span class="captcha-taunt">${esc(cap.taunt)}</span>`;
+    const left = Math.max(0, Math.ceil((cap.leftMs || 0) / 1000));
+    const wrongs = cap.wrongs || 0;
+    let ask = '';
+    let hint = '';
+    if (cap.kind === 'word') {
+      ask = `找出所有 <b class="cap-target">${esc(cap.target)}</b> 字，共 ${cap.need} 个`;
+      hint = '点对了会变绿；点错一次不扣分，还能再试一次';
+    } else if (cap.kind === 'math') {
+      ask = `<b class="cap-target">${cap.a} + ${cap.b}</b> = ?`;
+      hint = '就是普通加法，四个选项里选一个';
+    } else {
+      ask = `点出指向 <b class="cap-target">${esc(cap.answer)}</b> 的箭头`;
+      hint = '箭头方向就是答案，别被文字骗了';
+    }
+    head.innerHTML = `
+      <div class="cap-top">
+        <span class="cap-badge">人机验证</span>
+        <span class="cap-time" data-role="capTime">${left}s</span>
+      </div>
+      <div class="cap-ask">${ask}</div>
+      <div class="cap-progress" data-role="capProgress">
+        ${cap.kind === 'word'
+          ? Array.from({ length: cap.need }).map(() => '<i></i>').join('')
+          : '<i class="solo"></i>'}
+      </div>
+      <div class="cap-hint">${hint}</div>
+      <div class="cap-meta">
+        <span>容错 ${wrongs} / ${CAPTCHA_TOLERANCE}</span>
+        <span class="taunt">${esc(cap.taunt || '')}</span>
+      </div>
+      <div class="cap-bar"><span data-role="capBar"></span></div>`;
     card.appendChild(head);
+
+    const swapBtn = el('button', 'cap-swap', cap.swapsLeft > 0
+      ? `这题太难？换一道（还剩 ${cap.swapsLeft} 次）`
+      : '换题次数用完了');
+    swapBtn.disabled = !(cap.swapsLeft > 0);
+    swapBtn.onclick = ev => { ev.stopPropagation(); captchaSwap(); };
+    card.appendChild(swapBtn);
 
     const grid = el('div', 'captcha-grid');
     const finish = ok => captchaFinish(ok);
@@ -5887,6 +6031,8 @@ html, body {
             tile.disabled = true;
             tile.classList.add('hit');
             picked += 1;
+            const dots = document.querySelectorAll('[data-role="capProgress"] i');
+            if (dots[picked - 1]) dots[picked - 1].classList.add('on');
             if (picked >= cap.need) finish(true);
           } else {
             finish(false);
