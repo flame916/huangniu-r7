@@ -2486,6 +2486,70 @@ html, body {
 .title-screen .title-art { height: 210px; }
 .title-screen .hero-big { font-size: 46px; }
 
+/* ============================================================================
+   桌面适配：大于手机宽度时，居中一台"手机"，内容可滚动
+   （之前没有 max-width，桌面被拉到 1254px，主按钮直接掉出屏幕）
+   ============================================================================ */
+@media (min-width: 560px) {
+  html, body {
+    height: 100%;
+    background:
+      radial-gradient(120% 80% at 50% 0%, #2A211A 0%, #14100C 60%, #0C0906 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #app {
+    width: 430px;
+    max-width: 430px;
+    height: min(900px, calc(100dvh - 32px));
+    border-radius: 26px;
+    overflow: hidden;
+    border: 2px solid #2A2118;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 2px 0 rgba(255, 255, 255, 0.06);
+    background: var(--cm-paper);
+  }
+  /* 桌面下画布内的滚动交给各 screen */
+  .screen { overflow-y: auto; overflow-x: hidden; }
+  .title-screen, .chapter-screen { overflow-y: auto; }
+}
+
+/* 封面主视觉：网点 0.3% */
+.title-halftone {
+  order: 1;
+  position: relative;
+  padding: 6px 4px 0;
+}
+.title-halftone .halftone { width: 100%; height: auto; display: block; }
+.title-halftone .halftone-cap {
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--cm-ink-soft);
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+/* 顺序：网点 → 标题 → 票根 → 钩子 → 按钮 → 数据 */
+.title-screen .title-hero { order: 2; }
+.title-screen .ticket-stack { order: 3; }
+.title-screen .title-hook { order: 4; }
+.title-screen .actions { order: 5; }
+.title-screen .title-stat { order: 6; }
+.title-screen .title-foot { order: 7; }
+/* 矮屏（桌面手机框 675px 高）压缩一点，保证主按钮留在首屏 */
+@media (max-height: 760px) {
+  .title-screen { gap: 8px; padding-top: calc(8px + env(safe-area-inset-top)); }
+  .title-halftone .halftone { max-height: 122px; width: auto; max-width: 100%; margin: 0 auto; }
+  .title-halftone .halftone-cap { display: none; }
+  .title-screen .hero-tags { display: none; }
+  .title-screen .title-stat { display: none; }
+  .title-screen .ticket-meta { font-size: 10px; }
+  .title-screen .hero-big { font-size: 38px; }
+  .title-screen .hero-sub { font-size: 16px; }
+  .title-screen .hero-ticket { padding: 12px 14px 0; }
+  .title-screen .rate-num { font-size: 48px; }
+  .title-screen .title-hook { display: none; }
+}
+
 </style>
 </head>
 <body>
@@ -4406,6 +4470,42 @@ html, body {
   // =========================================================================
 
   // 入场页背景：只留暗角与纸感，主视觉交给"票根堆 + 售罄章"
+  // 把文字采样成网点：这是封面的核心概念（0.3% 由人群组成）
+  function halftoneSvg(text, cols, rows) {
+    const W = 320, H = 220;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let size = 150;
+    ctx.font = '800 ' + size + 'px -apple-system, "PingFang SC", sans-serif';
+    while (ctx.measureText(text).width > W - 24 && size > 20) {
+      size -= 4;
+      ctx.font = '800 ' + size + 'px -apple-system, "PingFang SC", sans-serif';
+    }
+    ctx.fillText(text, W / 2, H / 2);
+    const data = ctx.getImageData(0, 0, W, H).data;
+    const stepX = W / cols, stepY = H / rows;
+    let dots = '';
+    let seed = 7;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    for (let ry = 0; ry < rows; ry++) {
+      for (let rx = 0; rx < cols; rx++) {
+        const px = Math.floor(rx * stepX + stepX / 2);
+        const py = Math.floor(ry * stepY + stepY / 2);
+        const a = data[(py * W + px) * 4 + 3];
+        if (a < 96) continue;
+        const r = 1.1 + (a / 255) * (stepX * 0.34);
+        const red = rnd() > 0.94;                    // 少数红点：抢到的那几个
+        dots += `<circle cx="${(rx * stepX + stepX / 2).toFixed(1)}" cy="${(ry * stepY + stepY / 2).toFixed(1)}"
+          r="${r.toFixed(2)}" fill="${red ? '#D34539' : '#2A2118'}" opacity="${(0.55 + a / 510).toFixed(2)}"/>`;
+      }
+    }
+    return `<svg class="halftone" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-label="0.3%">${dots}</svg>`;
+  }
+
   function titleBackground() {
     return `<svg class="title-bg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <defs>
@@ -4459,22 +4559,11 @@ html, body {
     s.appendChild(hero);
 
     // ---- 封面插画（漫画风）----
-    const art = el('div', 'title-art');
-    art.innerHTML = `
-      <div class="title-art-img"></div>
-      <div class="title-art-sign">今晚全城放号</div>
-      <div class="title-art-tip">火锅 · 潮玩 · 演出 · 二手</div>`;
+    // 主视觉概念：0.3% 这三个字，由无数个"举着手机的人"组成的网点
+    const art = el('div', 'title-halftone');
+    art.innerHTML = halftoneSvg('0.3%', 46, 34) +
+      `<div class="halftone-cap">每一颗点，都是一个举着手机在等的人</div>`;
     s.appendChild(art);
-
-    // 四章缩略：告诉他"不只火锅"
-    const strip = el('div', 'chapter-strip');
-    [['火锅', 'var(--art-scene)'], ['潮玩', 'var(--art-ch2)'],
-     ['演出', 'var(--art-ch3)'], ['二手', 'var(--art-ch4)']].forEach(([label, bg]) => {
-      const cell = el('div', 'chapter-cell');
-      cell.innerHTML = `<i style="background-image:${bg}"></i><span>${label}</span>`;
-      strip.appendChild(cell);
-    });
-    s.appendChild(strip);
 
     // ---- 主视觉：巨型 0.3% 水印 + 卡片上盖一枚「已售罄」红章 ----
     const stack = el('div', 'ticket-stack');
@@ -4487,8 +4576,8 @@ html, body {
         <span class="ticket-tag">今晚 19:30</span>
       </div>
       <div class="ticket-rate">
-        <span class="rate-num">0.3<span class="rate-pct">%</span></span>
-        <span class="rate-label">中签率</span>
+        <span class="rate-num">3<span class="rate-pct">个</span></span>
+        <span class="rate-label">每场放号</span>
       </div>
       <div class="ticket-meta">
         <span>每场 3 个号</span>
