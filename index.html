@@ -2,6 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -6151,7 +6154,7 @@ ${it.desc}`);
   }
 
   // 给验证题加上"人话"的辅助：倒计时、容错次数、可换一题
-  const CAPTCHA_SECONDS = 40;      // 原来没有限时，现在给足 40 秒
+  const CAPTCHA_SECONDS = 24;      // 40s 太拖，压到 24s（题量没变，只是别让人干等）
   const CAPTCHA_TOLERANCE = 1;     // 点错 1 次不算失败
   const CAPTCHA_SWAPS = 1;         // 换一题的机会
 
