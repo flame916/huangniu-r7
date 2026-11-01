@@ -3328,6 +3328,32 @@ html, body {
 .lock-bar .clock, .lock-bar .clock-label, .lock-bar .attempt { color: var(--cm-ink) !important; }
 .lock-bar .judge { color: var(--cm-red) !important; }
 
+/* 信号格：常态就低，掉格时其余灰掉 */
+.ios-sig rect { fill: currentColor; opacity: .2; }
+.ios-sig[data-bars="1"] rect:nth-child(-n+1),
+.ios-sig[data-bars="2"] rect:nth-child(-n+2),
+.ios-sig[data-bars="3"] rect:nth-child(-n+3),
+.ios-sig[data-bars="4"] rect:nth-child(-n+4) { opacity: 1; }
+
+/* 假重载遮罩：白屏 + 转圈，只动 transform / opacity */
+.reload-veil {
+  position: fixed; inset: 0; z-index: 80;
+  background: #FBF7F0;
+  display: flex; align-items: center; justify-content: center;
+  animation: reloadIn .18s ease-out both;
+}
+@keyframes reloadIn { from { opacity: 0 } to { opacity: 1 } }
+.reload-card { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.reload-spin {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid rgba(42,33,24,.16); border-top-color: #B5342A;
+  animation: reloadSpin .9s linear infinite;
+}
+@keyframes reloadSpin { to { transform: rotate(360deg) } }
+.reload-title { font-size: 17px; font-weight: 800; color: #2A2118; letter-spacing: .02em; }
+.reload-sub { font-size: 13px; color: #5E4F3F; }
+.reload-tip { font-size: 12px; color: #8A7862; }
+
 </style>
 </head>
 <body>
@@ -5988,6 +6014,7 @@ ${it.desc}`);
     buy.settled = false;
     buy.myNo = null;
     buy.lockDone = false;      // 第二段判定：换关卡必须重置，否则下一关会跳过
+    buy.reloadUsed = false;    // 假重载：一关最多一次
     buy.lockScore = null;
     buy.lock = null;
     buy.capitalPaid = 0;
@@ -6256,6 +6283,7 @@ ${it.desc}`);
 
   function buyBeginRound() {
     sysLagTick();
+    if (sysTryFakeReload()) return;    // 断网重载：播完自己再调一次 buyBeginRound
     setTimeout(() => {
       if (buy.phase !== 'intro' && buy.phase !== 'run') return;
       hintFor('roundStart');
@@ -7467,6 +7495,15 @@ ${it.desc}`);
     app.innerHTML = '';
 
     const shell = SHELL_DEFS[buy.shell || 'bao'];
+    if (buy.phase === 'reload') {
+      // 假重载：白屏 + 转圈 + 一句"正在重新连接"，别盖太久（1.1~1.6s）
+      app.appendChild(el('div', 'reload-veil',
+        '<div class="reload-card"><div class="reload-spin"></div>'
+        + '<div class="reload-title">网络连接中断</div>'
+        + '<div class="reload-sub">正在重新加载抢号页面…</div>'
+        + '<div class="reload-tip">（号还在，手别抖）</div></div>'));
+      return;
+    }
     const s = el('div', 'screen ' + shell.id);
     // 结构：状态栏/导航/内容可滚动，底部读秒条固定钉住 —— 小屏也一定能点到按钮
     const scroll = el('div', 'bao-scroll');
@@ -7477,7 +7514,7 @@ ${it.desc}`);
     scroll.appendChild(el('div', 'bao-status',
       `<span class="ios-time">9:${mins}</span>
        <span class="ios-right">
-         <svg class="ios-sig" viewBox="0 0 18 12" aria-hidden="true">
+         <svg class="ios-sig" data-role="sig" data-bars="${sysSig()}" viewBox="0 0 18 12" aria-hidden="true">
            <rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/>
            <rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0.5" width="3" height="11.5" rx="1"/>
          </svg>
@@ -8159,6 +8196,12 @@ ${it.desc}`);
       '同一关反复刷，成功率在往下掉。',
       '心态要炸了。深呼吸，下一局表现分会减半。',
     ],
+    // 4.5) 断网重载
+    reload: [
+      '重连好了。刚才那两秒，可能已经有人抢走了一个。',
+      '加载完了。这就是没信号的下场。',
+      '页面刷新了，你的手速没刷新。',
+    ],
     // 5) 延迟 / 卡顿
     lagSpike: [
       '延迟 {lag}ms，这波判定吃亏。',
@@ -8255,7 +8298,39 @@ ${it.desc}`);
       chip.textContent = sysLagNow + 'ms';
       chip.classList.toggle('bad', sysLagNow > 260);
     }
+    sysSigTick();
     return spike;
+  }
+
+  // 信号格：这游戏里的手机就没满过——常态 1~2 格，延迟飙红时掉到 1 格
+  let sysSigBars = 2;
+  function sysSig() { return sysSigBars; }
+  function sysSigTick() {
+    if (sysLagNow > 260) sysSigBars = 1;
+    else if (sysLagNow > 140) sysSigBars = 2;
+    else sysSigBars = Math.random() < 0.6 ? 1 : 2;
+    const sig = document.querySelector('[data-role="sig"]');
+    if (sig) sig.setAttribute('data-bars', String(sysSigBars));
+    return sysSigBars;
+  }
+
+  // ---- 假的重连：时不时"页面重新加载" ----------------------------------------
+  // 只在局间触发（buyBeginRound 开头），绝不打断进行中的读秒：
+  // 抢号抢到一半被 RNG 判负，那是惩罚玩家而不是叙事。
+  // ?reload=always 可以把假重载拉满，方便截图/联调
+  const RELOAD_CHANCE = /[?&]reload=always/.test(location.search) ? 1 : 0.10;
+  function sysTryFakeReload() {
+    if (buy.reloadUsed) return false;                 // 一关最多一次
+    if (Math.random() >= RELOAD_CHANCE) return false;
+    buy.reloadUsed = true;
+    buy.phase = 'reload';
+    render();
+    setTimeout(() => {
+      if (app2.screen !== 'buy') return;
+      sysSay('reload');
+      buyBeginRound();                                // 重来这一局，不扣局数
+    }, 1100 + Math.floor(Math.random() * 500));
+    return true;
   }
 
   // ---- 进局前的"怎么玩" -----------------------------------------------------
