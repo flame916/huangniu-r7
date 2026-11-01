@@ -2609,6 +2609,7 @@ html, body {
   overflow: hidden;
 }
 .launch-phone {
+  position: relative;
   width: 250px;
   height: 470px;
   border-radius: 30px;
@@ -2618,10 +2619,10 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: phoneIn 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: phoneIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes phoneIn {
-  from { transform: translateY(16px) scale(0.96); opacity: 0; }
+  from { transform: translateY(18px) scale(0.95); opacity: 0; }
   to { transform: none; opacity: 1; }
 }
 .launch-bar { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255, 247, 234, 0.6); }
@@ -2640,22 +2641,60 @@ html, body {
   font-size: 18px; font-weight: 800; font-style: normal;
   border: 2px solid rgba(11, 8, 5, 0.6);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 160ms ease-out;
 }
 .launch-app span { font-size: 11px; color: rgba(255, 247, 234, 0.72); }
-.launch-app.is-target i { animation: targetPop 900ms cubic-bezier(0.22, 1, 0.36, 1) 320ms both; }
+.launch-app.is-target i.icon-press { transform: scale(0.9); }
 .launch-app.is-target span { color: #FFF7EA; }
-@keyframes targetPop {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.18); box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.10); }
-  100% { transform: scale(1); }
-}
 .launch-dock {
   margin-top: auto;
   height: 46px;
   border-radius: 14px;
   background: rgba(255, 247, 234, 0.08);
 }
-/* 图标被"点开"后放大铺满 */
+
+/* 手指：先停在下沿外，抬手 → 移到图标 → 按下 */
+.launch-finger {
+  position: absolute;
+  width: 56px;
+  height: 86px;
+  margin-left: -28px;
+  opacity: 0;
+  transform: translate(26px, 150px) scale(1);
+  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms ease-out;
+  pointer-events: none;
+  z-index: 5;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+}
+.launch-finger svg { width: 100%; height: 100%; display: block; }
+.launch-screen.finger-in .launch-finger { opacity: 1; }
+.launch-screen.finger-move .launch-finger { transform: translate(0, 0) scale(1); }
+.launch-screen.finger-press .launch-finger {
+  transform: translate(0, 6px) scale(0.9);
+  transition-duration: 140ms;
+}
+
+/* 按下时的涟漪 */
+.launch-tap-ring {
+  position: absolute;
+  width: 0; height: 0;
+  margin: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 247, 234, 0.85);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3);
+  pointer-events: none;
+  z-index: 4;
+}
+.launch-tap-ring.ring-pop {
+  animation: ringPop 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes ringPop {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.4); }
+  70% { opacity: 0.35; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(3.4); }
+}
+
 .launch-open {
   position: absolute;
   inset: 0;
@@ -2666,16 +2705,13 @@ html, body {
   transform: scale(0.55);
   border-radius: 44px;
   pointer-events: none;
-  transition: opacity 240ms ease-out, transform 320ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 320ms ease-out;
+  transition: opacity 260ms ease-out, transform 380ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 380ms ease-out;
+  z-index: 6;
 }
 .launch-open.is-open {
   opacity: 1;
   transform: scale(1);
   border-radius: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-  .launch-open { transform: none; border-radius: 0; }
-  .launch-phone { animation: none; }
 }
 .launch-open-icon {
   width: 74px; height: 74px; border-radius: 20px;
@@ -2684,6 +2720,41 @@ html, body {
   color: #FFF;
   font-size: 30px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
+}
+/* 按下时的一句说明：让人看清"点了什么" */
+.launch-tap-label {
+  position: absolute;
+  left: 50%;
+  bottom: 92px;
+  transform: translateX(-50%) translateY(6px);
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(12, 8, 6, 0.82);
+  border: 1.5px solid rgba(255, 247, 234, 0.5);
+  color: #FFF7EA;
+  font-size: 12px;
+  letter-spacing: 1px;
+  opacity: 0;
+  transition: opacity 200ms ease-out, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  z-index: 7;
+}
+.launch-screen.finger-press .launch-tap-label {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.launch-skip {
+  position: absolute;
+  left: 0; right: 0; bottom: 26px;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 247, 234, 0.55);
+  z-index: 7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .launch-open { transform: none; border-radius: 0; }
+  .launch-phone { animation: none; }
+  .launch-finger { transition: none; }
 }
 .launch-open-name { font-size: 17px; font-weight: 800; color: #FFF; letter-spacing: 2px; }
 .launch-open-tip { font-size: 11px; color: rgba(255, 255, 255, 0.75); }
@@ -6252,27 +6323,78 @@ html, body {
       <div class="launch-phone">
         <div class="launch-bar"><span>9:41</span><span>▲ ▮</span></div>
         <div class="launch-grid">
-          ${APP_ICONS.map(a => `
-            <div class="launch-app${a.key === target.key ? ' is-target' : ''}" style="--c:${a.color}">
+          ${APP_ICONS.map((a, i) => `
+            <div class="launch-app${a.key === target.key ? ' is-target' : ''}"
+                 style="--c:${a.color}; --i:${i}">
               <i>${esc(a.glyph)}</i><span>${esc(a.name)}</span>
             </div>`).join('')}
         </div>
         <div class="launch-dock"></div>
       </div>
+      <!-- 手指：从屏幕下方伸上来，先停一下再按（放在 screen 下，坐标跟屏幕一致） -->
+      <div class="launch-finger" aria-hidden="true">
+        <svg viewBox="0 0 48 74">
+          <rect x="5" y="36" width="38" height="34" rx="17" fill="#F3C9A4" stroke="#2A2118" stroke-width="3.5"/>
+          <rect x="15" y="4" width="16" height="42" rx="8" fill="#F3C9A4" stroke="#2A2118" stroke-width="3.5"/>
+          <rect x="18.5" y="8" width="9" height="13" rx="4.5" fill="#FFF3E4" stroke="#2A2118" stroke-width="2.5"/>
+        </svg>
+      </div>
+      <div class="launch-tap-ring" aria-hidden="true"></div>
+      <div class="launch-tap-label">点开「${esc(target.name)}」</div>
       <div class="launch-open">
         <div class="launch-open-icon" style="--c:${target.color}">${esc(target.glyph)}</div>
         <div class="launch-open-name">${esc(target.name)}</div>
         <div class="launch-open-tip">正在打开…</div>
-      </div>`;
+      </div>
+      <div class="launch-skip">点任意处跳过</div>`;
     app.appendChild(s);
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const forceMotion = /[?&]motion=on/.test(location.search);
+    const reduce = !forceMotion && window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const openEl = s.querySelector('.launch-open');
-    setTimeout(() => { if (openEl) openEl.classList.add('is-open'); }, reduce ? 160 : 620);
-    setTimeout(() => {
+    const finger = s.querySelector('.launch-finger');
+    const ring = s.querySelector('.launch-tap-ring');
+    const icon = s.querySelector('.launch-app.is-target i');
+
+    // 手指对准目标图标（用图标在屏幕里的实际位置算）
+    if (finger && icon) {
+      const phone = s.querySelector('.launch-phone').getBoundingClientRect();
+      const r = icon.getBoundingClientRect();
+      const box = s.getBoundingClientRect();
+      const fx = r.left - box.left + r.width / 2;
+      const fy = r.top - box.top + r.height / 2;
+      // 实测校准：指尖正好落在图标中心
+      finger.style.left = (fx + 25) + 'px';   // 实测校准：指尖对准图标中心
+      finger.style.top = (fy - 28) + 'px';
+      if (ring) { ring.style.left = fx + 'px'; ring.style.top = fy + 'px'; }
+    }
+
+    const leave = () => {
       if (app2.screen !== 'launch') return;
       app2.screen = 'buy';
       render();
-    }, reduce ? 900 : 1300);
+    };
+
+    if (reduce) {
+      // 减弱动效：不摆手势，直接淡入打开
+      setTimeout(() => { if (openEl) openEl.classList.add('is-open'); }, 220);
+      setTimeout(leave, 1100);
+    } else {
+      // 慢一点：抬手 350 → 移动 700 → 按下 1500 → 打开 1700 → 进场 2600
+      setTimeout(() => { s.classList.add('finger-in'); }, 330);
+      setTimeout(() => { s.classList.add('finger-move'); }, 620);
+      setTimeout(() => {
+        s.classList.add('finger-press');
+        if (ring) ring.classList.add('ring-pop');
+        if (icon) icon.classList.add('icon-press');
+      }, 1500);
+      setTimeout(() => { if (openEl) openEl.classList.add('is-open'); }, 1760);
+      setTimeout(leave, 2650);
+    }
+
+    // 点一下可以直接跳过
+    s.onclick = () => { if (openEl) openEl.classList.add('is-open'); setTimeout(leave, 120); };
   }
 
   const SHELL_DEFS = {
