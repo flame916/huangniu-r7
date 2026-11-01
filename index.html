@@ -2764,9 +2764,13 @@ html, body {
 .title-halftone .halftone { transform: scale(1.04); transform-origin: center top; }
 .title-halftone .halftone-ribbon {
   position: absolute;
-  right: -18px;
-  top: 18px;
-  transform: rotate(8deg);
+  right: 6px;              /* 别伸到屏幕外被裁掉 */
+  top: 14px;
+  max-width: 62%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: rotate(6deg);
   background: var(--cm-red);
   color: #FFF7EA;
   font-size: 12px;
@@ -2913,6 +2917,95 @@ html, body {
   .title-screen .ticket-meta { display: none; }
   .title-screen .title-foot { display: none; }
   .title-screen .btn-primary { min-height: 46px; }
+}
+
+/* ============================================================================
+   封面对齐 iPhone 17 Pro Max（430×932，Safari 可见高度约 780–870）
+   全部改成随视口高度自适应，不再按固定 px 排
+   ============================================================================ */
+.title-screen {
+  gap: clamp(6px, 1.5vh, 12px);
+}
+.title-halftone .halftone {
+  height: clamp(78px, 16.5vh, 168px);
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.title-halftone .halftone-cap {
+  font-size: clamp(10px, 1.4vh, 11px);
+  margin-top: 2px;
+}
+.title-screen .hero-line { margin-bottom: clamp(2px, 0.8vh, 6px); }
+.title-screen .hero-big { font-size: clamp(30px, 5.2vh, 50px); }
+.title-screen .hero-sub { font-size: clamp(14px, 2.1vh, 20px); }
+.title-screen .hero-tags { margin-top: clamp(4px, 1vh, 10px); }
+.title-screen .hero-ticket { padding: clamp(10px, 1.6vh, 16px) 16px 0; }
+.title-screen .rate-num { font-size: clamp(38px, 6.4vh, 62px); }
+.title-screen .count-num { font-size: clamp(16px, 2.4vh, 22px); }
+.title-screen .ticket-head, .title-screen .ticket-meta { font-size: 11px; }
+.title-screen .ticket-perf { margin-top: clamp(6px, 1.2vh, 10px); }
+.title-screen .ticket-stub { padding: clamp(5px, 1vh, 8px) 0 clamp(6px, 1.2vh, 10px); }
+.title-screen .title-hook b { font-size: clamp(14px, 2vh, 16px); }
+.title-screen .title-hook span { font-size: clamp(11px, 1.6vh, 13px); }
+.title-screen .btn-primary { min-height: clamp(44px, 6.2vh, 56px); }
+.title-screen .title-tool { height: clamp(34px, 4.6vh, 40px); }
+.title-screen .title-foot { font-size: 12px; }
+
+/* 极矮时（工具栏展开 + 小屏）再收一档，但不隐藏关键信息 */
+@media (max-height: 660px) {
+  .title-halftone .halftone-cap { display: none; }
+  .title-screen .hero-tags { display: none; }
+  .title-screen .title-stat { display: none; }
+  .title-screen .title-hook { display: none; }
+}
+
+/* ============================================================================
+   用容器高度（cqh）排版：自动排除安全区，iPhone Safari 工具栏伸缩也不切内容
+   ============================================================================ */
+@supports (container-type: size) {
+  .title-screen { container-type: size; }
+  .title-halftone .halftone { height: clamp(76px, 17cqh, 168px); }
+  .title-screen { gap: clamp(5px, 1.4cqh, 12px); }
+  .title-screen .hero-line { margin-bottom: clamp(2px, 0.7cqh, 6px); }
+  .title-screen .hero-big { font-size: clamp(28px, 5.4cqh, 50px); }
+  .title-screen .hero-sub { font-size: clamp(13px, 2.1cqh, 20px); }
+  .title-screen .hero-tags { margin-top: clamp(4px, 1cqh, 10px); }
+  .title-screen .hero-ticket { padding: clamp(9px, 1.7cqh, 16px) 16px 0; }
+  .title-screen .rate-num { font-size: clamp(34px, 6.4cqh, 62px); }
+  .title-screen .count-num { font-size: clamp(15px, 2.4cqh, 22px); }
+  .title-screen .ticket-perf { margin-top: clamp(5px, 1.2cqh, 10px); }
+  .title-screen .ticket-stub { padding: clamp(5px, 1cqh, 8px) 0 clamp(5px, 1.2cqh, 10px); }
+  .title-screen .title-hook b { font-size: clamp(13px, 2cqh, 16px); }
+  .title-screen .title-hook span { font-size: clamp(11px, 1.6cqh, 13px); }
+  .title-screen .btn-primary { min-height: clamp(42px, 6.2cqh, 56px); }
+  .title-screen .title-tool { height: clamp(32px, 4.6cqh, 40px); }
+  .title-screen .title-foot { font-size: 12px; }
+  /* 章节过场同样按容器高度排 */
+  .chapter-screen { container-type: size; }
+  .chapter-screen .chapter-name { font-size: clamp(26px, 5.2cqh, 40px); }
+  .chapter-screen .chapter-line { font-size: clamp(13px, 2cqh, 16px); }
+}
+
+/* 按"可用高度"分级收缩：内容是给屏幕的，不是给视口的（安全区已排除） */
+@supports (container-type: size) {
+  @container (max-height: 780px) {
+    .title-screen .title-hook { display: none; }
+    .title-screen .title-stat { display: none; }
+  }
+  @container (max-height: 740px) {
+    .title-screen .hero-tags { display: none; }
+    .title-halftone .halftone-cap { display: none; }
+  }
+  @container (max-height: 690px) {
+    .title-screen .ticket-meta { display: none; }
+    .title-screen .title-foot { display: none; }
+    .title-screen .hero-sub { display: none; }
+  }
+  @container (max-height: 630px) {
+    .title-screen .ticket-perf { display: none; }
+    .title-screen .ticket-stub { padding-top: 4px; }
+  }
 }
 
 </style>
