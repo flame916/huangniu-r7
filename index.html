@@ -2852,6 +2852,69 @@ html, body {
 /* 说明卡自己滚，别把底栏顶出去 */
 .bao .bao-scroll, .bao .scroll, .howto-wrap { min-height: 0; }
 
+/* ============================================================================
+   大屏手机适配（iPhone Pro Max / 安卓大屏）：封面内容不再溢出，网点不随宽度膨胀
+   ============================================================================ */
+#app { height: 100dvh; }
+@supports not (height: 100dvh) { #app { height: 100%; } }
+
+/* 网点固定高度，避免 440px 宽时把主按钮顶出屏幕 */
+.title-halftone .halftone {
+  height: 168px;
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+  transform: none;
+}
+/* 封面整体允许纵向滚动（大屏 + 安全区也不会切掉 CTA） */
+.title-screen { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* 大屏上把纵向节奏收紧一点 */
+@media (min-width: 400px) {
+  .title-screen { gap: 10px; }
+  .title-screen .hero-big { font-size: 46px; }
+  .title-screen .hero-ticket { padding: 14px 16px 0; }
+}
+/* 剧情 / 章节页同样允许滚动 */
+.chapter-screen, .screen.dark { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* iOS Safari：URL 栏展开时 100% 比可视区高，改用 dvh 兜住 */
+@supports (height: 100dvh) {
+  html, body { height: 100dvh; }
+}
+/* 很宽的机型（Pro Max/平板）居中，别让卡片拉成长条 */
+@media (min-width: 430px) and (max-width: 559px) {
+  #app { max-width: 460px; margin: 0 auto; }
+}
+/* 可选调试角标（?debug=1） */
+.size-badge {
+  position: fixed;
+  right: 8px;
+  top: calc(4px + env(safe-area-inset-top));
+  z-index: 99;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #FFF7EA;
+  font-family: ui-monospace, monospace;
+  pointer-events: none;
+}
+
+/* 很矮的屏幕（小屏手机 + Safari 工具栏）：再压一档，保证主按钮在首屏 */
+@media (max-height: 620px) {
+  .title-halftone .halftone { height: 92px; }
+  .title-screen { gap: 7px; padding-top: calc(6px + env(safe-area-inset-top)); }
+  .title-screen .hero-big { font-size: 34px; }
+  .title-screen .hero-sub { font-size: 14px; }
+  .title-screen .hero-tags { display: none; }
+  .title-screen .ticket-rate .rate-num { font-size: 40px; }
+  .title-screen .title-hook { display: none; }
+  .title-screen .title-stat { display: none; }
+  .title-screen .ticket-meta { display: none; }
+  .title-screen .title-foot { display: none; }
+  .title-screen .btn-primary { min-height: 46px; }
+}
+
 </style>
 </head>
 <body>
@@ -7587,6 +7650,25 @@ html, body {
       default: renderTitle();
     }
   }
+
+  // ---- 调试角标：?debug=1 显示视口与安全区 ----
+  (function sizeBadge() {
+    if (!/[?&]debug=1/.test(location.search)) return;
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;left:-9999px;top:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    const badge = document.createElement('div');
+    badge.className = 'size-badge';
+    const paint = () => {
+      badge.textContent = Math.round(innerWidth) + '×' + Math.round(innerHeight)
+        + ' · dpr' + (window.devicePixelRatio || 1).toFixed(1)
+        + ' · 上' + parseInt(cs.paddingTop, 10) + '/下' + parseInt(cs.paddingBottom, 10);
+    };
+    document.body.appendChild(badge);
+    paint();
+    addEventListener('resize', paint);
+  })();
 
   // ---- 时钟 ---------------------------------------------------------------
   // rAF 与定时器共用同一个时钟：谁先到就推进到「现在」，不会重复计时。
