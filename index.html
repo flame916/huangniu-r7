@@ -5984,6 +5984,10 @@ ${it.desc}`);
     buy.firstBefore = null;
     buy.settled = false;
     buy.myNo = null;
+    buy.lockDone = false;      // 第二段判定：换关卡必须重置，否则下一关会跳过
+    buy.lockScore = null;
+    buy.lock = null;
+    buy.capitalPaid = 0;
     const run = app2.run;
     const taskCh0 = D.TASKS[taskId] && D.TASKS[taskId].chapter;
     const taskCh = taskCh0;
@@ -6302,7 +6306,12 @@ ${it.desc}`);
       return;
     }
     if (buy.phase === 'run' && buy.mode === 'report') {
-      if (buy.t >= buy.totalMs) buySettle();      // 时间到按已举报的算
+      const rp0 = buy.report;
+      const allDone = rp0 && rp0.cards && rp0.cards.every(c => c.decided);
+      if (buy.t >= buy.totalMs || allDone) {      // 时间到 或 三张判完
+        if (enterSecondStage()) return;
+        buySettle();
+      }
       return;
     }
     if (buy.phase === 'run' && buy.mode === 'crowd') {
@@ -6315,15 +6324,6 @@ ${it.desc}`);
     }
     if (buy.phase === 'run' && buy.mode === 'spot') {
       return;                                  // 验票不靠时间，靠挑对
-    }
-    if (buy.phase === 'run' && buy.mode === 'report') {
-      // 三张都判完就进第二段（提交举报单）
-      const rp = buy.report;
-      if (rp && rp.cards && rp.cards.every(c => c.decided)) {
-        if (enterSecondStage()) return;
-        buySettle();
-      }
-      return;
     }
     if (buy.phase === 'run' && buy.mode === 'multi') {
       const m = buy.multi;
@@ -6670,7 +6670,10 @@ ${it.desc}`);
       buzz(20);
     }
     render();
-    if (rp.right + rp.wrong >= rp.need + 1) buySettle();
+    if (rp.right + rp.wrong >= rp.need + 1) {
+      if (enterSecondStage()) return;   // X-5：第三张判完先"提交举报单"
+      buySettle();
+    }
   }
 
   function buyCrowdPick(i) {
