@@ -3243,6 +3243,57 @@ html, body {
   .call-screen { animation: none; }
 }
 
+/* ============================================================================
+   iOS 风格弹窗
+   ============================================================================ */
+.ios-alert-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(12, 8, 6, 0.42);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+/* 遮罩不做透明动画：动画不推进的环境下会停在透明首帧 */
+.ios-alert-wrap.closing { animation: alertFadeOut 140ms ease-in forwards; }
+@keyframes alertFadeOut { to { background: rgba(12, 8, 6, 0); } }
+.ios-alert {
+  width: min(286px, 100%);
+  border-radius: 18px;
+  background: var(--cm-card);
+  border: 2px solid var(--cm-line);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35), 0 3px 0 rgba(42, 33, 24, 0.9);
+  overflow: hidden;
+  animation: alertPop 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes alertPop { from { transform: scale(0.86); } to { transform: none; } }
+.ia-body { padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 6px; }
+.ia-title { font-size: 16px; font-weight: 800; color: var(--cm-ink); text-align: center; line-height: 1.35; }
+.ia-msg { font-size: 12.5px; line-height: 1.55; color: var(--cm-ink-soft); text-align: center; }
+.ia-actions {
+  display: flex;
+  border-top: 2px solid var(--cm-line);
+}
+.ia-btn {
+  flex: 1 1 0;
+  min-height: 46px;
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: #8F2519;
+}
+.ia-btn.ia-cancel { color: var(--cm-ink); border-right: 2px solid var(--cm-line); }
+.ia-btn.danger { color: #B5342A; }
+.ia-btn:active { background: rgba(42, 33, 24, 0.08); }
+@media (prefers-reduced-motion: reduce) {
+  .ios-alert, .ios-alert-wrap { animation: none; }
+}
+
 </style>
 </head>
 <body>
@@ -5141,11 +5192,18 @@ html, body {
       row.disabled = owned || !affordable || (eq.price || 0) <= 0;
       row.onclick = () => {
         if ((run.money || 0) < (eq.price || 0)) { toast('钱不够'); return; }
-        run.money = (run.money || 0) - (eq.price || 0);
-        run.equipmentId = eq.id;
-        save();
-        toast('换了设备：' + eq.name);
-        render();
+        iosAlert({
+          title: '花 ¥' + eq.price + ' 换「' + eq.name + '」？',
+          message: (eq.desc || '') + '　余额 ¥' + (run.money || 0) + ' → ¥' + ((run.money || 0) - (eq.price || 0)),
+          ok: '换', cancel: '取消',
+          onOk: () => {
+            run.money = (run.money || 0) - (eq.price || 0);
+            run.equipmentId = eq.id;
+            save();
+            toast('换了设备：' + eq.name);
+            render();
+          },
+        });
       };
       list.appendChild(row);
     });
@@ -5321,11 +5379,12 @@ html, body {
 
     if (hasSave) {
       const reset = el('button', 'tool-btn title-reset', '清档重来');
-      reset.onclick = () => {
-        app2.run = freshRun();
-        save();
-        go('story');
-      };
+      reset.onclick = () => iosAlert({
+        title: '清空这次存档？',
+        message: '当天进度、已抢到的号、结局收集会一起清掉，无法恢复。',
+        ok: '清空', cancel: '算了', danger: true,
+        onOk: () => { app2.run = freshRun(); save(); go('story'); },
+      });
       act.appendChild(reset);
     }
     s.appendChild(act);
@@ -7616,7 +7675,15 @@ html, body {
         bottom.appendChild(goBtn);
         const again = el('button', 'bao-tap ghost', won ? '不要了 · 回标题' : '再抢一次');
         again.onclick = () => {
-          if (won) { go('title'); return; }
+          if (won) {
+            iosAlert({
+              title: '不要这个号了？',
+              message: '手上的号会在 10 分钟后作废，等于白抢一次。',
+              ok: '不要了', cancel: '留着', danger: true,
+              onOk: () => go('title'),
+            });
+            return;
+          }
           buyStart(buy.taskId);
         };
         bottom.appendChild(again);
@@ -8125,7 +8192,13 @@ html, body {
         transfer.textContent = '已过号作废，转让失效';
         transfer.disabled = true;
       }
-      transfer.onclick = () => {
+      transfer.onclick = () => iosAlert({
+        title: '把这个号转手？',
+        message: '加价 ¥80 卖出去，风控 +4。号一旦出手就收不回来了。',
+        ok: '卖掉', cancel: '再想想', danger: true,
+        onOk: () => transferGo(),
+      });
+      const transferGo = () => {
         if (R.poolStats(buy.pool).myNos.indexOf(r.myNo) < 0) { toast('号已过号作废，转让失效'); return; }
         if (run.flags && run.flags['noSold_' + r.myNo]) { toast('这个号已经转让过了'); return; }
         run.flags = run.flags || {};
@@ -8214,6 +8287,44 @@ html, body {
     paint();
     addEventListener('resize', paint);
   })();
+
+
+  // =========================================================================
+  // iOS 风格弹窗：居中卡片 + 遮罩模糊 + 回弹（只动 transform，避免动画不推进时透明）
+  // =========================================================================
+  function iosAlert(opts) {
+    const o = opts || {};
+    const host = document.getElementById('app') || document.body;   // 挂到最外层：跟滚动区无关
+    const old = document.querySelector('.ios-alert-wrap');
+    if (old) old.remove();
+    const wrap = el('div', 'ios-alert-wrap');
+    wrap.setAttribute('data-role', 'iosAlert');
+    wrap.innerHTML = `
+      <div class="ios-alert">
+        <div class="ia-body">
+          <div class="ia-title"></div>
+          ${o.message ? '<div class="ia-msg"></div>' : ''}
+        </div>
+        <div class="ia-actions">
+          ${o.cancel === false ? '' : '<button class="ia-btn ia-cancel" data-role="iaCancel"></button>'}
+          <button class="ia-btn ia-ok${o.danger ? ' danger' : ''}" data-role="iaOk"></button>
+        </div>
+      </div>`;
+    wrap.querySelector('.ia-title').textContent = o.title || '';
+    if (o.message) wrap.querySelector('.ia-msg').textContent = o.message;
+    const okBtn = wrap.querySelector('[data-role="iaOk"]');
+    const cancelBtn = wrap.querySelector('[data-role="iaCancel"]');
+    okBtn.textContent = o.ok || '确定';
+    if (cancelBtn) cancelBtn.textContent = o.cancel || '取消';
+    const close = () => {
+      wrap.classList.add('closing');
+      setTimeout(() => wrap.remove(), 140);
+    };
+    okBtn.onclick = () => { close(); if (o.onOk) o.onOk(); };
+    if (cancelBtn) cancelBtn.onclick = () => { close(); if (o.onCancel) o.onCancel(); };
+    wrap.onclick = ev => { if (ev.target === wrap && o.dismissible !== false) { close(); } };
+    host.appendChild(wrap);
+  }
 
   // ---- 时钟 ---------------------------------------------------------------
   // rAF 与定时器共用同一个时钟：谁先到就推进到「现在」，不会重复计时。
