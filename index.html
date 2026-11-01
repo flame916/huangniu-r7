@@ -3110,6 +3110,103 @@ html, body {
   word-break: break-word;
 }
 
+/* ============================================================================
+   手机感细节：iOS 状态栏 / 客服浮标 / Home 指示条 / 按下涟漪 / 号票微光
+   ============================================================================ */
+.bao-status {
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cm-ink);
+}
+.ios-time { font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
+.ios-right { display: flex; align-items: center; gap: 5px; color: var(--cm-ink); }
+.ios-sig { width: 17px; height: 11px; fill: currentColor; }
+.ios-wifi { width: 15px; height: 11px; fill: currentColor; }
+.ios-batt {
+  position: relative;
+  width: 23px; height: 11px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  display: inline-block;
+  opacity: 0.9;
+}
+.ios-batt::after {
+  content: '';
+  position: absolute; right: -3px; top: 3px;
+  width: 1.5px; height: 4px;
+  background: currentColor;
+  border-radius: 0 1px 1px 0;
+}
+.ios-batt i {
+  position: absolute; left: 1px; top: 1px; bottom: 1px;
+  width: 74%;
+  background: currentColor;
+  border-radius: 1px;
+}
+.ios-pct { font-size: 11px; font-variant-numeric: tabular-nums; }
+
+/* 客服入口（导航栏内，不悬浮，绝不压字） */
+.nav-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.cs-chip {
+  position: relative;
+  font-size: 12px;
+  color: var(--cm-ink);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid var(--cm-line);
+  background: var(--cm-card);
+}
+.cs-dot {
+  position: absolute; right: -1px; top: -1px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--cm-red);
+  border: 1.5px solid var(--cm-card);
+}
+
+/* Home 指示条 */
+.home-indicator {
+  flex: 0 0 auto;
+  height: 5px;
+  width: 118px;
+  margin: 0 auto;
+  border-radius: 3px;
+  background: rgba(42, 33, 24, 0.55);
+}
+
+/* 按下涟漪 */
+.bao-tap { position: relative; overflow: hidden; }
+.tap-ripple {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 12px; height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: rgba(255, 247, 234, 0.55);
+  pointer-events: none;
+  animation: rippleOut 500ms ease-out forwards;
+}
+@keyframes rippleOut {
+  from { transform: scale(1); opacity: 0.7; }
+  to { transform: scale(22); opacity: 0; }
+}
+
+/* 号票进场微光 */
+.bao .calling-row { position: relative; overflow: hidden; }
+.bao .calling-row::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0; width: 40%;
+  background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 100%);
+  transform: translateX(-140%);
+  animation: ticketShine 1100ms ease-out 260ms 1 both;
+  pointer-events: none;
+}
+@keyframes ticketShine { to { transform: translateX(340%); } }
+@media (prefers-reduced-motion: reduce) {
+  .bao .calling-row::after { animation: none; opacity: 0; }
+  .tap-ripple { animation-duration: 1ms; }
+}
+
 </style>
 </head>
 <body>
@@ -6133,6 +6230,15 @@ html, body {
   }
 
   // 手机上按下去要有"手感"：能震就震一下，不能震靠 CSS 的 scale/变色
+  // 按钮按下涟漪
+  function rippler(btn) {
+    if (!btn) return;
+    const r = document.createElement('span');
+    r.className = 'tap-ripple';
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 520);
+  }
+
   function buzz(ms) {
     try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
   }
@@ -6140,6 +6246,7 @@ html, body {
   function buyTap() {
     if (buy.phase !== 'run') return;
     buzz(10);
+    rippler(document.querySelector('.bao-tap'));
 
     if (buy.mode === 'slide') {
       const sl = buy.slide;
@@ -7072,10 +7179,23 @@ html, body {
     s.appendChild(scroll);
 
     // 状态栏 + 导航
+    const mins = String(41).padStart(2, '0');
     scroll.appendChild(el('div', 'bao-status',
-      `<span>9:41</span><span class="right">5G　${84}%</span>`));
+      `<span class="ios-time">9:${mins}</span>
+       <span class="ios-right">
+         <svg class="ios-sig" viewBox="0 0 18 12" aria-hidden="true">
+           <rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/>
+           <rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0.5" width="3" height="11.5" rx="1"/>
+         </svg>
+         <svg class="ios-wifi" viewBox="0 0 16 12" aria-hidden="true">
+           <path d="M8 10.6 L5.4 7.6 A4 4 0 0 1 10.6 7.6 Z"/>
+           <path d="M8 4.2 A7 7 0 0 0 2.2 6.3 L3.9 8.2 A4.6 4.6 0 0 1 12.1 8.2 L13.8 6.3 A7 7 0 0 0 8 4.2 Z" opacity="0.85"/>
+         </svg>
+         <span class="ios-batt"><i></i></span><span class="ios-pct">84</span>
+       </span>`));
     scroll.appendChild(el('div', 'bao-nav',
-      `<span class="back">‹</span><span class="title">${esc(shell.title)}</span><span class="fav">${esc(shell.right)}</span>`));
+      `<span class="back">‹</span><span class="title">${esc(shell.title)}</span>
+       <span class="nav-right"><span class="cs-chip">客服<i class="cs-dot"></i></span><span class="fav">${esc(shell.right)}</span></span>`));
     scroll.appendChild(el('div', 'bao-account',
       `<span>余额 ¥${esc(run.money || 0)}</span><span>会员 Lv.${(run.level || 0) + 1}</span><span>第 ${esc(run.day || 1)} 天</span>`));
 
@@ -7096,6 +7216,7 @@ html, body {
             <span class="judge" style="color:var(--bao-brand)">读完再开始</span>
           </div>
         </div>`;
+      bar2.appendChild(el('div', 'home-indicator'));
       const goBtn = el('button', 'bao-tap howto-go', '知道了，开始');
       goBtn.setAttribute('data-role', 'howtoGo');
       goBtn.onclick = () => {
@@ -7470,6 +7591,10 @@ html, body {
     }
     s.appendChild(sysSlot);
     s.appendChild(bottom);
+
+    // 底部 Home 指示条（手机感）
+    const hi = el('div', 'home-indicator');
+    s.appendChild(hi);
 
 
     // 假按钮
