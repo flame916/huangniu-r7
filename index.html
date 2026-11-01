@@ -6237,6 +6237,16 @@ ${it.desc}`);
     return 0;
   }
 
+  // 进入第二段判定：有配置就切到 lock 阶段，返回 true
+  function enterSecondStage() {
+    const cfg = SECOND_STAGE[buy.taskId];
+    if (!cfg || buy.lockDone) return false;
+    buy.phase = 'lock';
+    buy.lock = { taps: 0, need: cfg.need, leftMs: cfg.ms, cfg: cfg };
+    render();
+    return true;
+  }
+
   function buyBeginRound() {
     sysLagTick();
     setTimeout(() => {
@@ -6306,18 +6316,21 @@ ${it.desc}`);
     if (buy.phase === 'run' && buy.mode === 'spot') {
       return;                                  // 验票不靠时间，靠挑对
     }
+    if (buy.phase === 'run' && buy.mode === 'report') {
+      // 三张都判完就进第二段（提交举报单）
+      const rp = buy.report;
+      if (rp && rp.cards && rp.cards.every(c => c.decided)) {
+        if (enterSecondStage()) return;
+        buySettle();
+      }
+      return;
+    }
     if (buy.phase === 'run' && buy.mode === 'multi') {
       const m = buy.multi;
       if (!m) return;
       m.t = buy.t;
       if (m.t >= buy.totalMs) {
-        // 极限三合一：抢完还要"锁号"——三下之内锁住，锁不住就掉档
-        if (buy.taskId === 'X-3' && !buy.lockDone) {
-          buy.phase = 'lock';
-          buy.lock = { taps: 0, need: 3, leftMs: 2600 };
-          render();
-          return;
-        }
+        if (enterSecondStage()) return;
         buySettle();
         return;
       }
@@ -6342,7 +6355,7 @@ ${it.desc}`);
       if (L.taps >= L.need || L.leftMs <= 0) {
         buy.lockScore = L.taps >= L.need ? 1 : Math.min(0.6, L.taps / L.need * 0.6);
         buy.lockDone = true;
-        if (L.taps >= L.need) toast('锁住了 · 号不会跑');
+        if (L.taps >= L.need && L.cfg) toast(L.cfg.ok);
         buySettle();
       }
       return;
@@ -6735,7 +6748,11 @@ ${it.desc}`);
       }];
     } else if (buy.mode === 'report') {
       const rp = buy.report || { right: 0, wrong: 0, need: 3 };
-      score = R.reportScoreOf(rp.right, rp.wrong, rp.need);
+      const repScore = R.reportScoreOf(rp.right, rp.wrong, rp.need);
+      const cfg5 = SECOND_STAGE['X-5'];
+      score = (buy.taskId === 'X-5')
+        ? repScore * (1 - cfg5.weightB) + (buy.lockScore != null ? buy.lockScore : 0) * cfg5.weightB
+        : repScore;
       buy.results = [{
         id: score >= 0.99 ? 'perfect' : score >= 0.6 ? 'good' : score >= 0.3 ? 'ok' : 'miss',
         label: '举报 ' + rp.right + ' 个 · 误报 ' + rp.wrong + ' 个',
@@ -6758,8 +6775,9 @@ ${it.desc}`);
       const m = buy.multi || { hits: 0, misses: 0 };
       const denom = Math.max(1, buy.multiPrompts + m.misses);
       const multiScore = Math.max(0, Math.min(1, m.hits / denom));
+      const cfg3 = SECOND_STAGE['X-3'];
       score = (buy.taskId === 'X-3')
-        ? multiScore * 0.6 + (buy.lockScore != null ? buy.lockScore : 0) * 0.4   // 抢 60% + 锁 40%
+        ? multiScore * (1 - cfg3.weightB) + (buy.lockScore != null ? buy.lockScore : 0) * cfg3.weightB
         : multiScore;
       const j = score >= 0.9 ? R.JUDGES.perfect : score >= 0.6 ? R.JUDGES.good
               : score >= 0.3 ? R.JUDGES.ok : R.JUDGES.miss;
@@ -7475,16 +7493,20 @@ ${it.desc}`);
     if (buy.phase === 'lock' && buy.lock) {
       const L = buy.lock;
       const lockCard = el('div', 'howto-wrap');
+      const cfg = L.cfg || SECOND_STAGE['X-3'];
+      const goalText = cfg.goal
+        .replace('{left}', '<b data-role="lockLeft">' + (L.leftMs / 1000).toFixed(1) + 's</b>')
+        .replace('{need}', String(L.need));
       lockCard.innerHTML = `
         <div class="howto-card lock-card">
-          <div class="howto-head"><span class="howto-shell">极限三合一</span>
-            <span class="howto-badge">第三段 · 锁号</span></div>
-          <div class="howto-title">抢到了，别让它跑</div>
-          <div class="howto-goal">在 <b data-role="lockLeft">${(L.leftMs / 1000).toFixed(1)}s</b> 内连点 ${L.need} 下锁住号码</div>
+          <div class="howto-head"><span class="howto-shell">${esc((D.TASKS[buy.taskId] || {}).name || '连续判定')}</span>
+            <span class="howto-badge">${esc(cfg.sub)}</span></div>
+          <div class="howto-title">${esc(cfg.title)}</div>
+          <div class="howto-goal">${goalText}</div>
           <div class="lock-dots">${Array.from({ length: L.need }).map((_, i) =>
             `<i class="${i < L.taps ? 'on' : ''}"></i>`).join('')}</div>
           <div class="cap-bar"><span data-role="lockBar" style="transform:scaleX(1)"></span></div>
-          <button class="lock-btn" data-role="lockBtn">按 住 锁 号</button>
+          <button class="lock-btn" data-role="lockBtn">${esc(cfg.action)}</button>
         </div>`;
       scroll.appendChild(lockCard);
       const lb = lockCard.querySelector('[data-role="lockBtn"]');
@@ -7498,7 +7520,7 @@ ${it.desc}`);
       bar2.innerHTML = `<div class="clock-row"><div><div class="clock-label">第三段</div>
         <div class="clock" style="font-size:22px">锁号</div></div>
         <div class="judge-col"><span class="attempt">${L.taps} / ${L.need} 下</span>
-        <span class="judge" style="color:var(--bao-brand)">抢到的号正在跑</span></div></div>`;
+        <span class="judge" style="color:var(--bao-brand)">${esc(cfg.sub)}</span></div></div>`;
       s.appendChild(bar2);
       app.appendChild(s);
       return;
@@ -8073,8 +8095,22 @@ ${it.desc}`);
     'T2-3': { tries: 2, buff: 0.35, teach: true, note: '开张关：两次机会（目标 ~75%）' },
     'T4-2': { tries: 2, buff: 0.17, teach: true, note: '终局前：两次机会（目标 ~60%）' },
     'X-4':  { buff: 0.15, teach: true, note: '凑人头：人数够就过（目标 ~65%）' },
+    // —— 前期曲线：第一/二章通过率抬到 55~70%，越往后越靠技术 ——
+    'T1-1': { buff: 0.30, teach: true, note: '第一章第一关：+16% 教学缓冲' },
+    'T1-2': { buff: 0.10, teach: true, note: '第一章第二关：+10%' },
+    'T1-3': { buff: 0.22, teach: true, note: '第一章第三关：+10%' },
+    'T2-1': { buff: 0.04, teach: true, note: '第二章：+4%' },
+    'X-5': { buff: 0.08, teach: true, note: '举报关：举报 65% + 提交 35%' },
     'X-3': { buff: 0.08, teach: true, note: '三合一：抢 60% + 锁 40%，再给一点缓冲（目标 ~55%）' },
     'T3-2': { riskAware: true, buff: 0.22, teach: true, note: '风控越低越容易躲过（目标 ~50%）' },
+  };
+
+  // 第二段判定（X-3 锁号 / X-5 提交举报单）：可配置，判完加权
+  const SECOND_STAGE = {
+    'X-3': { need: 3, ms: 2600, weightB: 0.4, title: '抢到了，别让它跑', sub: '第三段 · 锁号',
+      action: '按 住 锁 号', goal: '在 {left}s 内连点 {need} 下锁住号码', ok: '锁住了 · 号不会跑' },
+    'X-5': { need: 2, ms: 2400, weightB: 0.35, title: '材料够了，提交', sub: '第二段 · 提交举报单',
+      action: '提  交  举  报', goal: '在 {left}s 内点 {need} 下提交，别让单子超时', ok: '提交成功 · 平台已受理' },
   };
 
   const SYS_LINES = {
