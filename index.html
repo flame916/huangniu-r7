@@ -2576,7 +2576,17 @@ html, body {
   border-radius: 10px;
   padding: 7px 10px;
 }
-.howto-go { margin-top: 4px; }
+.bao-bottom .bao-tap.howto-go {
+  background: linear-gradient(180deg, #C0392C, var(--cm-red) 45%, #96271C);
+  border: 2px solid var(--cm-red-dark);
+  border-radius: 999px;
+  color: #FFF7EA;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 0 var(--cm-red-dark);
+}
+.bao-bottom .bao-tap.howto-go:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--cm-red-dark); }
 .bao .btn-primary, .howto-card .btn-primary {
   background: linear-gradient(180deg, #C0392C, var(--cm-red) 45%, #96271C) !important;
   background-image: linear-gradient(180deg, #C0392C, var(--cm-red) 45%, #96271C) !important;
@@ -2663,6 +2673,10 @@ html, body {
   transform: scale(1);
   border-radius: 0;
 }
+@media (prefers-reduced-motion: reduce) {
+  .launch-open { transform: none; border-radius: 0; }
+  .launch-phone { animation: none; }
+}
 .launch-open-icon {
   width: 74px; height: 74px; border-radius: 20px;
   background: rgba(255, 255, 255, 0.18);
@@ -2673,6 +2687,99 @@ html, body {
 }
 .launch-open-name { font-size: 17px; font-weight: 800; color: #FFF; letter-spacing: 2px; }
 .launch-open-tip { font-size: 11px; color: rgba(255, 255, 255, 0.75); }
+
+/* ============================ bolder 一档 ============================ */
+/* 封面：网点更大、红色绶带斜切、标题块更重 */
+.title-halftone .halftone { transform: scale(1.04); transform-origin: center top; }
+.title-halftone .halftone-ribbon {
+  position: absolute;
+  right: -18px;
+  top: 18px;
+  transform: rotate(8deg);
+  background: var(--cm-red);
+  color: #FFF7EA;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  padding: 6px 22px;
+  border: 2px solid var(--cm-red-dark);
+  box-shadow: 0 3px 0 var(--cm-red-dark);
+}
+.title-screen .hero-big {
+  font-size: 50px;
+  letter-spacing: 3px;
+  position: relative;
+}
+.title-screen .hero-big-accent {
+  display: inline-block;
+  padding: 0 4px;
+  background: var(--cm-red);
+  color: #FFF7EA;
+  transform: rotate(-2deg);
+}
+.title-screen .hero-sub { font-size: 20px; font-weight: 700; letter-spacing: 3px; }
+
+/* 结局：图更高、标题压在图上、剧终红章 */
+.story-scene.is-ending { min-height: 300px; max-height: 420px; }
+.ending-lockup {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ending-kicker {
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: rgba(255, 247, 234, 0.75);
+}
+.ending-title {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: 4px;
+  color: #FFF7EA;
+  text-shadow: 0 3px 0 rgba(20, 14, 10, 0.85), 0 10px 24px rgba(0, 0, 0, 0.55);
+}
+.ending-tag {
+  margin-top: 4px;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--cm-ink);
+  background: #FFE9B8;
+  border: 2px solid var(--cm-line);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.ending-stamp {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  z-index: 4;
+  transform: rotate(-14deg);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  color: var(--cm-red);
+  border: 3px solid var(--cm-red);
+  border-radius: 6px;
+  padding: 4px 12px;
+  background: rgba(253, 247, 236, 0.9);
+}
+
+/* 底部操作条吸底：说明卡/验证卡再高，主按钮也不会被推出屏幕（iPhone Safari 可视高度比桌面小） */
+.bao-bottom {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  background: var(--cm-paper);
+}
+/* 说明卡自己滚，别把底栏顶出去 */
+.bao .bao-scroll, .bao .scroll, .howto-wrap { min-height: 0; }
 
 </style>
 </head>
@@ -4685,8 +4792,9 @@ html, body {
     // ---- 封面插画（漫画风）----
     // 主视觉概念：0.3% 这三个字，由无数个"举着手机的人"组成的网点
     const art = el('div', 'title-halftone');
-    art.innerHTML = halftoneSvg('0.3%', 46, 34) +
-      `<div class="halftone-cap">每一颗点，都是一个举着手机在等的人</div>`;
+    art.innerHTML = halftoneSvg('0.3%', 52, 40) +
+      `<div class="halftone-ribbon">今晚 19:30 放号</div>
+       <div class="halftone-cap">每一颗点，都是一个举着手机在等的人</div>`;
     s.appendChild(art);
 
     // ---- 主视觉：巨型 0.3% 水印 + 卡片上盖一枚「已售罄」红章 ----
@@ -5113,7 +5221,11 @@ html, body {
           : chapter.key === 4 ? '同城 · 现货' : '悬崖火锅')}</div>
       <div class="scene-board"><span>当前叫号</span><b>${esc(chapter.key === 2 ? 'A113' : chapter.key === 3 ? 'C207'
         : chapter.key === 4 ? 'D019' : 'A485')}</b></div>`}
-      <div class="scene-label"><b>${esc(isEnding ? '结 局' : chapter.name)}</b>${isEnding ? '' : `<span>${esc(chapter.sub || '')}</span>`}</div>`;
+      ${isEnding ? `<div class="ending-lockup">
+          <div class="ending-kicker">THE END</div>
+          <div class="ending-title">${esc(endingKey === 'B' ? '公开' : '掌刀人')}</div>
+          <div class="ending-tag">结局 ${esc(endingKey)}</div>
+        </div><div class="ending-stamp">剧终</div>` : `<div class="scene-label"><b>${esc(chapter.name)}</b><span>${esc(chapter.sub || '')}</span></div>`}`;
     s.appendChild(scene);
     if (isEnding) s.appendChild(card);   // 结局：先图后文
 
@@ -6155,12 +6267,12 @@ html, body {
     app.appendChild(s);
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const openEl = s.querySelector('.launch-open');
-    setTimeout(() => { if (openEl) openEl.classList.add('is-open'); }, reduce ? 40 : 620);
+    setTimeout(() => { if (openEl) openEl.classList.add('is-open'); }, reduce ? 160 : 620);
     setTimeout(() => {
       if (app2.screen !== 'launch') return;
       app2.screen = 'buy';
       render();
-    }, reduce ? 200 : 1250);
+    }, reduce ? 900 : 1300);
   }
 
   const SHELL_DEFS = {
@@ -6591,9 +6703,14 @@ html, body {
             <span class="judge" style="color:var(--bao-brand)">读完再开始</span>
           </div>
         </div>`;
-      const fake = el('button', 'bao-tap', '先看说明');
-      fake.disabled = true;
-      bar2.appendChild(fake);
+      const goBtn = el('button', 'bao-tap howto-go', '知道了，开始');
+      goBtn.setAttribute('data-role', 'howtoGo');
+      goBtn.onclick = () => {
+        buy.phase = 'intro';
+        buy.t = 0;
+        render();
+      };
+      bar2.appendChild(goBtn);
       s.appendChild(bar2);
       app.appendChild(s);
       return;
@@ -7033,13 +7150,6 @@ html, body {
         ${h.steps.map(s => `<li>${esc(s)}</li>`).join('')}
       </ol>
       ${h.tip ? `<div class="howto-tip">⚠ ${esc(h.tip)}</div>` : ''}`;
-    const go = el('button', 'btn btn-primary howto-go', '知道了，开始');
-    go.onclick = () => {
-      buy.phase = 'intro';
-      buy.t = 0;
-      render();
-    };
-    card.appendChild(go);
     return card;
   }
 
