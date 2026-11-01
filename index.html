@@ -3294,6 +3294,37 @@ html, body {
   .ios-alert, .ios-alert-wrap { animation: none; }
 }
 
+
+/* X-3 第三段：锁号 */
+.lock-card { gap: 12px; }
+.lock-dots { display: flex; gap: 10px; justify-content: center; padding: 4px 0; }
+.lock-dots i {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--cm-line);
+  background: var(--cm-paper);
+  display: block;
+}
+.lock-dots i.on { background: var(--cm-red); border-color: var(--cm-red-dark); }
+.lock-btn {
+  width: 100%;
+  min-height: 64px;
+  border-radius: 999px;
+  border: 2px solid var(--cm-red-dark);
+  background: linear-gradient(180deg, #C0392C, var(--cm-red) 45%, #96271C);
+  color: #FFF7EA;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  box-shadow: 0 4px 0 var(--cm-red-dark);
+}
+.lock-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--cm-red-dark); }
+
+
+/* 锁号段的底栏：不管哪个壳，都用浅色纸底，保证文字读得清 */
+.lock-bar { background: var(--cm-card) !important; border-top: 2px solid var(--cm-line) !important; }
+.lock-bar .clock, .lock-bar .clock-label, .lock-bar .attempt { color: var(--cm-ink) !important; }
+.lock-bar .judge { color: var(--cm-red) !important; }
+
 </style>
 </head>
 <body>
@@ -5209,6 +5240,13 @@ html, body {
     });
     s.appendChild(list);
 
+    if (run.school === 'capital') {
+      const capPct = Math.round(capitalBuff(run) * 100);
+      s.appendChild(el('div', 'talk-text',
+        `资本流专属：闲钱 ¥${(run.money || 0).toLocaleString()} → 成功率 +${capPct}%`
+        + (run.capitalRetries ? '（本局重判机会已用掉）' : '；每局还能花 ¥5,000 重判一次')));
+    }
+
     // ---- 道具：直接把成功率加上去（一次性，rollPurchase 里读 run.boughtBuff） ----
     const propTitle = el('div', 'talk-who', '<div class="name">道具</div>'
       + '<div class="sub">一次性，买完下一局生效；风控会涨</div>');
@@ -6180,6 +6218,16 @@ ${it.desc}`);
     return Math.min(1, v);
   }
 
+  // 资本流专属：闲钱越厚越容易抢到（每 ¥10,000 +5%，封顶 +15%）
+  function capitalBuff(run) {
+    if (!run || run.school !== 'capital') return 0;
+    return Math.min(0.15, Math.floor((run.money || 0) / 10000) * 0.05);
+  }
+
+  // 资本流专属：失败后可以花钱重判（¥3,000 / 次，最多 2 次）
+  const CAPITAL_RETRY_COST = 5000;   // 每"一次游戏跑"最多买 1 次重判，标志性能力而不是永动机
+  const CAPITAL_RETRY_MAX = 1;
+
   // 天赋加成：只加"表现分"，不改判定公式
   function talentScoreBonus() {
     const run = app2.run || {};
@@ -6262,7 +6310,17 @@ ${it.desc}`);
       const m = buy.multi;
       if (!m) return;
       m.t = buy.t;
-      if (m.t >= buy.totalMs) { buySettle(); return; }
+      if (m.t >= buy.totalMs) {
+        // 极限三合一：抢完还要"锁号"——三下之内锁住，锁不住就掉档
+        if (buy.taskId === 'X-3' && !buy.lockDone) {
+          buy.phase = 'lock';
+          buy.lock = { taps: 0, need: 3, leftMs: 2600 };
+          render();
+          return;
+        }
+        buySettle();
+        return;
+      }
       if (m.lit >= 0 && m.t >= m.litUntil) { m.lit = -1; }
       if (m.lit < 0 && m.t >= m.nextAt && m.promptsLeft > 0) {
         m.lit = Math.floor(Math.random() * 3);
@@ -6270,6 +6328,22 @@ ${it.desc}`);
         m.promptsLeft -= 1;
         m.nextAt = m.litUntil + 320;
         render();
+      }
+      return;
+    }
+
+    if (buy.phase === 'lock' && buy.lock) {
+      const L = buy.lock;
+      L.leftMs = Math.max(0, L.leftMs - dt);
+      const el2 = document.querySelector('[data-role="lockLeft"]');
+      if (el2) el2.textContent = (L.leftMs / 1000).toFixed(1) + 's';
+      const bar = document.querySelector('[data-role="lockBar"]');
+      if (bar) bar.style.transform = 'scaleX(' + (L.leftMs / 2600).toFixed(3) + ')';
+      if (L.taps >= L.need || L.leftMs <= 0) {
+        buy.lockScore = L.taps >= L.need ? 1 : Math.min(0.6, L.taps / L.need * 0.6);
+        buy.lockDone = true;
+        if (L.taps >= L.need) toast('锁住了 · 号不会跑');
+        buySettle();
       }
       return;
     }
@@ -6683,7 +6757,10 @@ ${it.desc}`);
     } else if (buy.mode === 'multi') {
       const m = buy.multi || { hits: 0, misses: 0 };
       const denom = Math.max(1, buy.multiPrompts + m.misses);
-      score = Math.max(0, Math.min(1, m.hits / denom));
+      const multiScore = Math.max(0, Math.min(1, m.hits / denom));
+      score = (buy.taskId === 'X-3')
+        ? multiScore * 0.6 + (buy.lockScore != null ? buy.lockScore : 0) * 0.4   // 抢 60% + 锁 40%
+        : multiScore;
       const j = score >= 0.9 ? R.JUDGES.perfect : score >= 0.6 ? R.JUDGES.good
               : score >= 0.3 ? R.JUDGES.ok : R.JUDGES.miss;
       buy.results = [{ id: j.id, label: '抢到 ' + m.hits + ' 个窗口' }];
@@ -6708,11 +6785,23 @@ ${it.desc}`);
       const tries = (tuned && tuned.tries) || 1;
       const savedBuff = run.boughtBuff || 0;
       const teachBuff = (tuned && tuned.buff) || 0;
+      const capBuff = capitalBuff(run);
       let last = null;
       for (let i = 0; i < tries; i++) {
-        run.boughtBuff = savedBuff + teachBuff;      // 教学加成只在这一判里生效
+        run.boughtBuff = savedBuff + teachBuff + capBuff;   // 教学/资本加成只在这一判生效
         last = G.rollPurchase(run, buy.taskId, tunedScore);
         if (last.success) break;
+      }
+      // 资本流：还能花钱再判一次
+      let paid = 0;
+      while (!last.success && run.school === 'capital'
+        && (run.capitalRetries || 0) < CAPITAL_RETRY_MAX && (run.money || 0) >= CAPITAL_RETRY_COST) {
+        run.money -= CAPITAL_RETRY_COST;
+        run.capitalRetries = (run.capitalRetries || 0) + 1;
+        paid += 1;
+        buy.capitalPaid = (buy.capitalPaid || 0) + 1;
+        run.boughtBuff = savedBuff + teachBuff + capBuff;
+        last = G.rollPurchase(run, buy.taskId, tunedScore);
       }
       run.boughtBuff = savedBuff;                    // 还原，不写进存档
       return last;
@@ -6753,6 +6842,7 @@ ${it.desc}`);
         level: run.level,
         luck: run.luck,
       },
+      capitalSpent: (buy.capitalPaid || 0) * CAPITAL_RETRY_COST,
       luckGain: res.luckGain,
       streakBonus: res.streakBonus,
       leveledUp: res.leveledUp,
@@ -7382,6 +7472,38 @@ ${it.desc}`);
       `<span>余额 ¥${esc(run.money || 0)}</span><span>会员 Lv.${(run.level || 0) + 1}</span><span>第 ${esc(run.day || 1)} 天</span>`));
 
     // 怎么玩阶段：整屏只放说明卡
+    if (buy.phase === 'lock' && buy.lock) {
+      const L = buy.lock;
+      const lockCard = el('div', 'howto-wrap');
+      lockCard.innerHTML = `
+        <div class="howto-card lock-card">
+          <div class="howto-head"><span class="howto-shell">极限三合一</span>
+            <span class="howto-badge">第三段 · 锁号</span></div>
+          <div class="howto-title">抢到了，别让它跑</div>
+          <div class="howto-goal">在 <b data-role="lockLeft">${(L.leftMs / 1000).toFixed(1)}s</b> 内连点 ${L.need} 下锁住号码</div>
+          <div class="lock-dots">${Array.from({ length: L.need }).map((_, i) =>
+            `<i class="${i < L.taps ? 'on' : ''}"></i>`).join('')}</div>
+          <div class="cap-bar"><span data-role="lockBar" style="transform:scaleX(1)"></span></div>
+          <button class="lock-btn" data-role="lockBtn">按 住 锁 号</button>
+        </div>`;
+      scroll.appendChild(lockCard);
+      const lb = lockCard.querySelector('[data-role="lockBtn"]');
+      if (lb) lb.onclick = () => {
+        if (!buy.lock || buy.lock.taps >= buy.lock.need) return;
+        buy.lock.taps += 1;
+        buzz(8);
+        render();
+      };
+      const bar2 = el('div', 'bao-bottom lock-bar');
+      bar2.innerHTML = `<div class="clock-row"><div><div class="clock-label">第三段</div>
+        <div class="clock" style="font-size:22px">锁号</div></div>
+        <div class="judge-col"><span class="attempt">${L.taps} / ${L.need} 下</span>
+        <span class="judge" style="color:var(--bao-brand)">抢到的号正在跑</span></div></div>`;
+      s.appendChild(bar2);
+      app.appendChild(s);
+      return;
+    }
+
     if (buy.phase === 'howto') {
       const wrap2 = el('div', 'howto-wrap');
       wrap2.appendChild(renderHowtoCard());
@@ -7951,6 +8073,7 @@ ${it.desc}`);
     'T2-3': { tries: 2, buff: 0.35, teach: true, note: '开张关：两次机会（目标 ~75%）' },
     'T4-2': { tries: 2, buff: 0.17, teach: true, note: '终局前：两次机会（目标 ~60%）' },
     'X-4':  { buff: 0.15, teach: true, note: '凑人头：人数够就过（目标 ~65%）' },
+    'X-3': { buff: 0.08, teach: true, note: '三合一：抢 60% + 锁 40%，再给一点缓冲（目标 ~55%）' },
     'T3-2': { riskAware: true, buff: 0.22, teach: true, note: '风控越低越容易躲过（目标 ~50%）' },
   };
 
@@ -8388,6 +8511,7 @@ ${it.desc}`);
     addRow('手速等级上限', Math.round(r.before.cap * 100) + '%');
     addRow('三局表现分', Math.round(r.score * 100) + '% · ' + R.performanceTier(r.score));
     addRow('欧气', '+' + r.luckGain + (r.streakBonus ? '（连击 +' + r.streakBonus + '）' : ''));
+    if (r.capitalSpent) addRow('资本流重判', '−¥' + r.capitalSpent + '（用钱买了一次机会）');
     addRow('风控', String(run.risk || 0));
     card.appendChild(rows);
     s.appendChild(card);
@@ -8604,11 +8728,19 @@ ${it.desc}`);
       const saved = run.boughtBuff || 0;
       const tries = (t0 && t0.tries) || 1;
       const buff = (t0 && t0.buff) || 0;
+      const cap = capitalBuff(run);
       let last = null;
       for (let i = 0; i < tries; i++) {
-        run.boughtBuff = saved + buff;
+        run.boughtBuff = saved + buff + cap;
         last = G.rollPurchase(run, taskId, sc);
         if (last.success) break;
+      }
+      let paid = 0;
+      while (!last.success && run.school === 'capital'
+        && (run.capitalRetries || 0) < CAPITAL_RETRY_MAX && (run.money || 0) >= CAPITAL_RETRY_COST) {
+        run.money -= CAPITAL_RETRY_COST; run.capitalRetries = (run.capitalRetries || 0) + 1; paid += 1;
+        run.boughtBuff = saved + buff + cap;
+        last = G.rollPurchase(run, taskId, sc);
       }
       run.boughtBuff = saved;
       return last;
