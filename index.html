@@ -5856,6 +5856,11 @@ ${it.desc}`);
     };
   }
 
+  // 剧情原文里的旧称呼统一显示成「统子哥」（不碰 js/data.js）
+  function unifyName(text) {
+    return String(text == null ? '' : text).split('老父亲').join('统子哥');
+  }
+
   function renderStory() {
     const run = app2.run;
     const node = D.STORY[run.nodeId];
@@ -5916,7 +5921,8 @@ ${it.desc}`);
     };
 
     // 打字机
-    const full = String(node.text || '');
+    // 剧情原文在 js/data.js（策划基准，不改），显示时统一把旧称呼换掉
+    const full = unifyName(node.text);
     const chars = Array.from(full);
     let shown = 0;
     if (typing) clearInterval(typing.timer);
