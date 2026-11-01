@@ -270,7 +270,7 @@ html, body {
 
 /* 中间可滚动区：门店卡 / 取号区 / 须知 */
 .bao-scroll {
-  flex: 1 1 auto;
+  flex: 1 1 0;               /* basis:0 → 只吃剩余空间，绝不压到底栏下面 */
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -2848,11 +2848,14 @@ html, body {
 
 /* 底部操作条吸底：说明卡/验证卡再高，主按钮也不会被推出屏幕（iPhone Safari 可视高度比桌面小） */
 .bao-bottom {
-  position: sticky;
-  bottom: 0;
-  z-index: 6;
+  /* 不再 sticky：sticky 会让底栏压在滚动内容上（气泡会盖住卡片文字） */
+  position: static;
+  z-index: 1;
   background: var(--cm-paper);
 }
+/* 让滚动区严格止于底栏之上 */
+.bao { overflow: hidden; }
+.bao-scroll { padding-bottom: 4px; }
 /* 说明卡自己滚，别把底栏顶出去 */
 .bao .bao-scroll, .bao .scroll, .howto-wrap { min-height: 0; }
 
@@ -3059,24 +3062,21 @@ html, body {
 /* ============================================================================
    老父亲头像 + 气泡
    ============================================================================ */
-.sys-float {
-  position: absolute;
-  right: 10px;
-  top: calc(env(safe-area-inset-top) + 118px);
-  z-index: 20;
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  max-width: calc(100% - 24px);
-  pointer-events: none;
+.bao-sys-slot {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  background: var(--cm-paper);
 }
-.sys-bubble {
-  max-width: 58vw;
-  white-space: normal;
-  word-break: break-word;
+.bao-sys-slot.has-row { padding: 4px 14px 6px; }
+.sys-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 2px;
+  min-height: 0;
 }
 .sys-avatar {
-  width: 38px; height: 38px;
+  width: 30px; height: 30px;
   border-radius: 50%;
   background: linear-gradient(160deg, #FFE9B8, #F3C060);
   border: 2px solid var(--cm-line);
@@ -3087,38 +3087,27 @@ html, body {
 }
 .sys-avatar i {
   font-style: normal;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 800;
   color: #8F2519;
 }
 @keyframes sysNod {
   0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-3px) rotate(2deg); }
+  50% { transform: translateY(-2px) rotate(2deg); }
 }
 .sys-bubble {
-  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   background: var(--cm-card);
   border: 2px solid var(--cm-line);
-  border-radius: 12px;
-  padding: 7px 10px;
+  border-radius: 10px;
+  padding: 5px 9px;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
   color: var(--cm-ink);
-  box-shadow: 0 2px 0 rgba(42, 33, 24, 0.8);
-  opacity: 0;
-  transform: translateY(-4px) scale(0.96);
-  transition: opacity 180ms ease-out, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.sys-bubble.show { opacity: 1; transform: none; }
-.sys-bubble::before {
-  content: '';
-  position: absolute;
-  left: -7px; top: 14px;
-  width: 10px; height: 10px;
-  background: var(--cm-card);
-  border-left: 2px solid var(--cm-line);
-  border-bottom: 2px solid var(--cm-line);
-  transform: rotate(45deg);
+  box-shadow: 0 2px 0 rgba(42, 33, 24, 0.75);
+  white-space: normal;
+  word-break: break-word;
 }
 
 </style>
@@ -7469,16 +7458,19 @@ html, body {
         bottom.appendChild(tap);
       }
     }
+    // 系统旁白：底栏上方独立占位行（flex 兄弟），出现时压缩滚动区，绝不覆盖内容
+    const sysSlot = el('div', 'bao-sys-slot');
+    if (buy.sysMsg && Date.now() - (buy.sysAt || 0) < 4000) {
+      const row = el('div', 'sys-row');
+      row.innerHTML = `<div class="sys-avatar" aria-hidden="true"><i>父</i></div>
+        <div class="sys-bubble"></div>`;
+      row.querySelector('.sys-bubble').textContent = buy.sysMsg;
+      sysSlot.appendChild(row);
+      sysSlot.classList.add('has-row');
+    }
+    s.appendChild(sysSlot);
     s.appendChild(bottom);
 
-    // 系统旁白头像（老父亲）：跟着状态渲染，重绘也不会丢
-    if (buy.sysMsg && Date.now() - (buy.sysAt || 0) < 4000) {
-      const fl = el('div', 'sys-float');
-      fl.innerHTML = `<div class="sys-avatar" aria-hidden="true"><i>父</i></div>
-        <div class="sys-bubble show"></div>`;
-      fl.querySelector('.sys-bubble').textContent = buy.sysMsg;
-      s.appendChild(fl);
-    }
 
     // 假按钮
     if (buy.trapOn) {
