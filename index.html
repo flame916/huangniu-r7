@@ -3354,6 +3354,17 @@ html, body {
 .reload-sub { font-size: 13px; color: #5E4F3F; }
 .reload-tip { font-size: 12px; color: #8A7862; }
 
+/* 剧情页：统子哥在对话卡下面的一句碎嘴 */
+.story-banter {
+  margin: -2px 6px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--dim, #8A7862);
+  opacity: .92;
+  letter-spacing: .01em;
+}
+
 </style>
 </head>
 <body>
@@ -4848,6 +4859,113 @@ html, body {
 
 </script>
   <script>
+// 由 tools/gen-banter.cjs 从 scripts/data/Banter.lua 生成 —— 不要手改这个文件
+// 语料只有一份：改 scripts/data/Banter.lua，然后 node tools/gen-banter.cjs
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (root) { root.BANTER = api.BANTER; root.pickBanter = api.pickBanter; }
+})(typeof window !== 'undefined' ? window : null, function () {
+  const BANTER = {
+    roundStart: [
+      "叮——这一局，手扣上去，别眨眼。",
+      "三个号在那儿躺着，就看你手够不够快。",
+      "别数错了，0 才是零，不是 1。",
+      "深呼吸。数到零再按，别抢我的台词。",
+      "这一局窗口更窄，统子哥看好你。",
+      "刷新的不止你一个，全城六千人都在点。",
+      "手指头别抖，抖一下就是一个号。",
+      "再抢不到，我也帮不了你了啊。",
+      "听我口令：三、二、一——按！",
+      "这局的号是硬货，抢到转手就有人要。",
+    ],
+    lag: [
+      "延迟 {lag}ms，这波判定吃亏，我提醒过你的。",
+      "你看这延迟——{lag}ms。不是你的手慢，是网不行。",
+      "{lag}ms 的延迟还硬冲？行，有种。",
+      "网络在抖，{lag}ms。要不你先站起来找个信号？",
+      "{lag}ms……这时候抢，等于让对面先手。",
+      "信号就一格，延迟 {lag}ms，我劝你稳住。",
+      "别怨我，延迟 {lag}ms 是运营商的问题。",
+      "{lag}ms，卡成这样，号子跑得比你快。",
+    ],
+    reload: [
+      "重连好了。刚才那两秒，可能已经有人抢走了一个。",
+      "加载完了。这就是信号差的下场。",
+      "页面刷新了，你的手速没刷新。",
+      "别看了，号还在，人没了。",
+      "掉线两秒，全城抢走三个号，你自己算。",
+    ],
+    win: [
+      "抢到了！祖上是不是抢过春运票？",
+      "成了。这一下，统子哥给你鼓掌。",
+      "号到手，先别笑，笑得早容易掉号。",
+      "漂亮。转发一下，让人知道什么叫手速。",
+      "抢到了？那我得说一句：运气。纯运气。",
+      "可以，这单转手就有钱。",
+      "稳。压进窗口，这就够了。",
+      "你这一下，隔壁工位那位要哭了。",
+    ],
+    lose: [
+      "手呢？手呢！0 秒都过了。",
+      "这局空手。别难过，保底我偷偷给你加上了。",
+      "没抢到。正常，全城六千人抢三个号。",
+      "差一帧。就差一帧，你说气不气。",
+      "空手而归。要不再来一把？我这儿时间多。",
+      "抢不到才是常态，抢到才是新闻。",
+      "这一局你输给了一个手比你抖得晚的人。",
+      "别急着退出，下一局我给你透点内幕。",
+    ],
+    taunt: [
+      "人家黄牛一天出货三十单，你还在为一张票激动。",
+      "抢号这件事，从来不缺人替你排队。",
+      "你要的不是号，是不服气。",
+      "别看我，我只是个系统，你是那个想抢的人。",
+      "你说这算不算病？我说算，但你不会停。",
+      "加价的人不是坏人，是着急的人。你急吗？",
+      "有人靠这个吃饭，你只是靠这个生气。",
+      "我提醒过你：抢不到，才叫人生。",
+    ],
+    pity: [
+      "别慌，连续空手我这边有保底，偷偷给你加。",
+      "又没中？保底已经涨了，下局容易点。",
+      "输多了会变强——这句话是我编的，但保底是真的。",
+      "保底这个机制，是我对你最后的温柔。",
+      "别急，输得越多，我给你的底就越高。",
+      "保底不是慈善，是我怕你真卸载。",
+      "再空两把，你就能靠保底抢到了，这叫努力。",
+    ],
+    story: [
+      "这行的规矩只有一条：先到先得，晚到认命。",
+      "别看广告，看号子。",
+      "我说什么你都别全信，我只是个系统。",
+      "抢东西这件事，从来没有技术含量，只有网速。",
+      "记住这句话：黄牛不倒票，只是转让。",
+      "你要真抢到了，记得别发朋友圈——会掉号。",
+      "别问我为什么帮你，我图你上头。",
+      "今天不抢，明天更贵。这话我每年都说。",
+    ],
+  };
+
+  let last = null;
+  function pickBanter(kind, ctx) {
+    const pool = BANTER[kind];
+    if (!pool || !pool.length) return null;
+    let line = pool[Math.floor(Math.random() * pool.length)];
+    let guard = 0;
+    while (pool.length > 1 && line === last && guard++ < 8) {
+      line = pool[Math.floor(Math.random() * pool.length)];
+    }
+    last = line;
+    if (ctx && ctx.lag != null) line = line.split("{lag}").join(String(ctx.lag));
+    return line.split("{lag}").join("?");
+  }
+
+  return { BANTER: BANTER, pickBanter: pickBanter };
+});
+
+</script>
+  <script>
 /* ============================================================================
    app.js - 手机试玩版：第一章（饱了么壳）
    
@@ -4935,17 +5053,17 @@ html, body {
   const EXTRA_STORY = {
     X1: {
       id: 'X1', type: 'task', speaker: '系统',
-      text: '开售前一分钟，猫瞳让你先选座：内场左侧还有两个连座，屏幕上一条滑轨，「把光标拖到放座的位置松手」。\n\n老父亲补一句：定位越准，系统越信你是熟客。',
+      text: '开售前一分钟，猫瞳让你先选座：内场左侧还有两个连座，屏幕上一条滑轨，「把光标拖到放座的位置松手」。\n\n统子哥补一句：定位越准，系统越信你是熟客。',
       taskId: 'X-1', onComplete: 'C3_1',
     },
     X2: {
       id: 'X2', type: 'task', speaker: '系统',
-      text: '倒倒上这张二手票，卖家说「绝对真票，扫码可验」。九张票摆在你面前，只有两张是真的。\n\n「摸清楚了再下手，」老父亲难得讲道理，「买错一张，钱和人都搭进去。」',
+      text: '倒倒上这张二手票，卖家说「绝对真票，扫码可验」。九张票摆在你面前，只有两张是真的。\n\n「摸清楚了再下手，」统子哥难得讲道理，「买错一张，钱和人都搭进去。」',
       taskId: 'X-2', onComplete: 'X2b',
     },
     X9: {
       id: 'X9', type: 'task', speaker: '系统',
-      text: '货压在手里，行情每天在动。\n\n「抢是手艺，卖是命。」老父亲念给你听，「零售赚得多但要等，同行来得快但压价，大客户——运气好一夜暴富，运气差血本无归。」',
+      text: '货压在手里，行情每天在动。\n\n「抢是手艺，卖是命。」统子哥念给你听，「零售赚得多但要等，同行来得快但压价，大客户——运气好一夜暴富，运气差血本无归。」',
       taskId: 'X-9', onComplete: 'X9b',
     },
     X9b: {
@@ -4958,27 +5076,27 @@ html, body {
     },
     X8: {
       id: 'X8', type: 'task', speaker: '系统',
-      text: '验完票还得谈价。卖家开价摆在那儿，你手里只有四轮机会。\n\n「压太狠，人家直接拉黑你，」老父亲提醒，「压不动，你就替他数钱。」',
+      text: '验完票还得谈价。卖家开价摆在那儿，你手里只有四轮机会。\n\n「压太狠，人家直接拉黑你，」统子哥提醒，「压不动，你就替他数钱。」',
       taskId: 'X-8', onComplete: 'C4_1',
     },
     X7: {
       id: 'X7', type: 'task', speaker: '系统',
-      text: '号子到手，老父亲又开口：「光会抢不够，还得会排队。」\n\n隔壁窗口有人在雇人代排，四小时一百块。你站在队里，后面的人一直往前挤，还有人想插进来——\n\n「位置守住，钱才是你的。」',
+      text: '号子到手，统子哥又开口：「光会抢不够，还得会排队。」\n\n隔壁窗口有人在雇人代排，四小时一百块。你站在队里，后面的人一直往前挤，还有人想插进来——\n\n「位置守住，钱才是你的。」',
       taskId: 'X-7', onComplete: 'C1_2',
     },
     X6: {
       id: 'X6', type: 'task', speaker: '系统',
-      text: '第二天到店，店员把扫码枪往你手机上一怼：「核销码报一下。」\n\n三个码，四位数字，按错一次就重来一位。老父亲补刀：「核销这步最没得商量——码不对，号子就是废纸。」',
+      text: '第二天到店，店员把扫码枪往你手机上一怼：「核销码报一下。」\n\n三个码，四位数字，按错一次就重来一位。统子哥补刀：「核销这步最没得商量——码不对，号子就是废纸。」',
       taskId: 'X-6', onComplete: 'C2_3',
     },
     X5: {
       id: 'X5', type: 'task', speaker: '系统',
-      text: '猫瞳的后台弹出一串转票帖：有原价转的乐迷，也有「内部票 100%保过、先付款后发码」的贩子。\n\n老父亲第一次没开玩笑：「举报假票是正经事。别手抖——误报一个正常人，扣的分比你抓一个贩子还多。」',
+      text: '猫瞳的后台弹出一串转票帖：有原价转的乐迷，也有「内部票 100%保过、先付款后发码」的贩子。\n\n统子哥第一次没开玩笑：「举报假票是正经事。别手抖——误报一个正常人，扣的分比你抓一个贩子还多。」',
       taskId: 'X-5', onComplete: 'C3_3',
     },
     X4: {
       id: 'X4', type: 'task', speaker: '系统',
-      text: '中签了，但只中一个。老父亲发来一句：「一个号不够意思，凑人头啊。」\n\n把朋友、同事、前女友的账号都拉来报名——人头越多，你的预估中签率越高。\n\n当然，风控看的是你一个人。',
+      text: '中签了，但只中一个。统子哥发来一句：「一个号不够意思，凑人头啊。」\n\n把朋友、同事、前女友的账号都拉来报名——人头越多，你的预估中签率越高。\n\n当然，风控看的是你一个人。',
       taskId: 'X-4', onComplete: 'C2_3',
     },
     X3: {
@@ -5020,7 +5138,7 @@ html, body {
     id: 'END_CH1',
     type: 'ending',
     speaker: '旁白',
-    text: '第一章到这里。老父亲把号子收进您的兜里，说：下一课，全城扫货。\n\n' +
+    text: '第一章到这里。统子哥把号子收进您的兜里，说：下一课，全城扫货。\n\n' +
           '——第二章「潮流限定款」，Maker 版待续；这个手机试玩版只做到第一章。',
   };
 
@@ -5781,7 +5899,7 @@ ${it.desc}`);
       <div class="avatar">${isSys ? '父' : esc((node.speaker || '旁白').slice(0, 1))}</div>
       <div class="talk-who">
         <div class="name">${esc(node.speaker || '旁白')}</div>
-        <div class="sub">${isSys ? '抢购圣手系统 · 自称老父亲' : esc(chapter.sub)}</div>
+        <div class="sub">${isSys ? '抢购圣手系统 · 自称统子哥' : esc(chapter.sub)}</div>
       </div>
       <span class="role-tag ${tone}">${isSys ? '系统' : isNarr ? '旁白' : '角色'}</span>`;
     card.appendChild(head);
@@ -5831,7 +5949,16 @@ ${it.desc}`);
       return true;
     };
     const isEnding = node.type === 'ending';
-    if (!isEnding) s.appendChild(card);
+    if (!isEnding) {
+      s.appendChild(card);
+      // 统子哥的碎嘴：每个节点固定一句（存到 run.banter，翻页回来不换）
+      run.banter = run.banter || {};
+      if (!run.banter[node.id]) run.banter[node.id] = pickBanter('story') || '';
+      if (run.banter[node.id]) {
+        const tip = el('div', 'story-banter', esc(run.banter[node.id]));
+        s.appendChild(tip);
+      }
+    }
     const endingKey = isEnding ? (node.ending === 'B' ? 'B' : 'A') : null;
     const endingArt = endingKey === 'B' ? 'var(--art-endB)' : 'var(--art-endA)';
     const endingName = endingKey === 'B' ? '结局 B · 公开' : '结局 A · 掌刀人';
@@ -7979,7 +8106,7 @@ ${it.desc}`);
       callEl.innerHTML = `
         <div class="call-top">
           <div class="call-avatar">父</div>
-          <div class="call-name">老父亲</div>
+          <div class="call-name">统子哥</div>
           <div class="call-state">${ringing ? '来电中…' : '通话中…'}</div>
         </div>
         <div class="call-hint">${ringing ? '系统提示：这通电话会影响你这一局' : '「喂？抢到了没？」'}</div>
@@ -7995,7 +8122,7 @@ ${it.desc}`);
         buy.callLog = buy.callLog || [];
         const d = new Date();
         const at = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-        buy.callLog.unshift({ at: at, t: answered ? '接听了老父亲的电话（这一局废了）' : '挂断了老父亲的电话' });
+        buy.callLog.unshift({ at: at, t: answered ? '接听了统子哥的电话（这一局废了）' : '挂断了统子哥的电话' });
         buy.call = null;
         if (answered) {
           G.addRisk(app2.run, 2);
@@ -8125,7 +8252,7 @@ ${it.desc}`);
 
 
   // =========================================================================
-  // 系统旁白：老父亲头像 + 气泡（抢票页右侧，随机嘲讽/提示）
+  // 系统旁白：统子哥头像 + 气泡（抢票页右侧，随机嘲讽/提示）
   // =========================================================================
 
   // =========================================================================
@@ -8156,18 +8283,22 @@ ${it.desc}`);
       action: '提  交  举  报', goal: '在 {left}s 内点 {need} 下提交，别让单子超时', ok: '提交成功 · 平台已受理' },
   };
 
+  // 统子哥的碎嘴分两类：
+  //   · 共享组（roundStart / lag / reload / win / lose / taunt / pity / story）
+  //     直接引用 BANTER —— 那份语料由 tools/gen-banter.cjs 从
+  //     scripts/data/Banter.lua 生成，两边说的一字不差
+  //   · 网页独有组（guide 按玩法 / failDiag 失败诊断 / 判定档位 / trap / boost）
   const SYS_LINES = {
-    // 1) 开局
-    roundStart: [
-      '这一局延迟 {lag}ms，你自己看着办。',
-      '别慌，慌也没用。',
-      '手扣在按钮上，别眨眼。',
-      '系统提示：抢不到是常态，别哭。',
-      '你前面还有 {queue} 个人，他们也在看屏幕。',
-      '呼吸。读秒归零之前别动手。',
-      '这一关的名字叫「{task}」，记住它。',
-    ],
-    // 2) 操作指引（按模式）
+    roundStart: BANTER.roundStart,
+    lagSpike: BANTER.lag,
+    reload: BANTER.reload,
+    win: BANTER.win,
+    lose: BANTER.lose,
+    taunt: BANTER.taunt,
+    pity: BANTER.pity,
+    story: BANTER.story,
+
+    // 操作指引（按模式）
     guide: {
       timing: ['指针进绿区再点，绿区在正中间。', '读秒别急，卡在中间那一下最值钱。', '抖一下没事，别整局都在抖。'],
       rapid: ['一直点，别停，停一下就是 0 分。', '手速关，比的是次数不是准头。', '拇指别抬起来。'],
@@ -8181,7 +8312,7 @@ ${it.desc}`);
       haggle: ['一次砍一点，看着对方反应。', '砍太狠会直接谈崩。', '压到目标价就停手。'],
       market: ['零售价高但慢，同行快但压价。', '行情会波动，别急着全出。', '大客户暴富或归零。'],
     },
-    // 3) 失败诊断
+    // 失败诊断
     failDiag: [
       '慢了 0.2 秒，号已经被端走。',
       '不是你手慢，是这一批就 3 个号。',
@@ -8189,37 +8320,13 @@ ${it.desc}`);
       '风控在涨，再刷视频会被盯上。',
       '抢号的样子，像极了三年前的黄牛。',
     ],
-    // 4) 保底 / 疲劳
-    pity: [
-      '系统给你加了保底：这一局比上一局更容易。',
-      '连续 {n} 次没中，保底在涨，别灰心。',
-      '同一关反复刷，成功率在往下掉。',
-      '心态要炸了。深呼吸，下一局表现分会减半。',
-    ],
-    // 4.5) 断网重载
-    reload: [
-      '重连好了。刚才那两秒，可能已经有人抢走了一个。',
-      '加载完了。这就是没信号的下场。',
-      '页面刷新了，你的手速没刷新。',
-    ],
-    // 5) 延迟 / 卡顿
-    lagSpike: [
-      '延迟 {lag}ms，这波判定吃亏。',
-      '网卡了，这波不怪你。',
-      '504 了，重连中…（其实没连）',
-      '后台在偷跑流量，你的手速被扣了。',
-    ],
-    // 6) 嘲讽 / 手感
+    // 判定档位的手感反馈
     tooEarly: ['太早了！你以为你是机器？', '早了，号还没放呢。', '急什么，急能把号抢回来？'],
     tooLate: ['手呢？手呢！', '慢了，号被别人端走了。', '读秒归零了才动手，练过？'],
     ok: ['凑合，压线进。', '这手速，勉强能看。', '还行，别骄傲。'],
     perfect: ['哎哟，正中。', '这下手不抖啊。', '有点东西。'],
     trap: ['点广告了？加价的是别人。', '那个按钮是收费的，你点了。'],
     boost: ['刷视频加速？风控也在加速。', '加速包买了，风控也跟着涨。'],
-    // 7) 收尾
-    win: ['抢到了？运气好，别得意。', '号给你了，别弄丢。', '恭喜，你抢到了别人最想要的那张。'],
-    lose: ['三局都没上，跟我没关系。', '空手回去，明天再来。'],
-    empty: ['号放完了，跟你快慢无关。'],
   };
 
 
@@ -8515,7 +8622,7 @@ ${it.desc}`);
     const allMiss = r.results.length && r.results.every(x => x.id === 'miss');
     const verdictLine = isDraw
       ? (allMiss ? '三个签全空，名额被别人的手气占走了'
-          : (r.results.some(x => x.id === 'perfect') ? '正中开签，老父亲说这是祖坟冒青烟' : '压线中签，运气也是实力'))
+          : (r.results.some(x => x.id === 'perfect') ? '正中开签，统子哥说这是祖坟冒青烟' : '压线中签，运气也是实力'))
       : isTicket
         ? (allMiss ? '手慢了，连座被别人的脚本锁走了'
             : (r.success ? '连座到手，票面写的是你自己的名字' : '差一点，100 张票跟您没关系'))
