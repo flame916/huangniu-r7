@@ -5209,6 +5209,41 @@ html, body {
     });
     s.appendChild(list);
 
+    // ---- 道具：直接把成功率加上去（一次性，rollPurchase 里读 run.boughtBuff） ----
+    const propTitle = el('div', 'talk-who', '<div class="name">道具</div>'
+      + '<div class="sub">一次性，买完下一局生效；风控会涨</div>');
+    s.appendChild(propTitle);
+    const props = el('div', 'actions');
+    [
+      { id: 'p1', name: '加价加速包', price: 1500, buff: 0.06, risk: 0, desc: '成功率 +6%，无副作用' },
+      { id: 'p2', name: '内幕消息', price: 4000, buff: 0.12, risk: 6, desc: '成功率 +12%，风控 +6' },
+      { id: 'p3', name: '内部号', price: 9000, buff: 0.20, risk: 12, desc: '成功率 +20%，风控 +12（最脏的路）' },
+    ].forEach(it => {
+      const afford = (run.money || 0) >= it.price;
+      const b = el('button', 'btn btn-ghost', `${it.name} · ¥${it.price}
+${it.desc}`);
+      b.style.whiteSpace = 'pre-line';
+      b.disabled = !afford;
+      b.onclick = () => iosAlert({
+        title: '买「' + it.name + '」？',
+        message: it.desc + '　余额 ¥' + (run.money || 0) + ' → ¥' + ((run.money || 0) - it.price),
+        ok: '买', cancel: '不要',
+        onOk: () => {
+          run.money = (run.money || 0) - it.price;
+          run.boughtBuff = (run.boughtBuff || 0) + it.buff;
+          if (it.risk) G.addRisk(run, it.risk);
+          save();
+          toast('道具已到手：' + it.name + '（下一局生效）');
+          render();
+        },
+      });
+      props.appendChild(b);
+    });
+    s.appendChild(props);
+    if ((run.boughtBuff || 0) > 0) {
+      s.appendChild(el('div', 'talk-text', '当前道具加成：+' + Math.round(run.boughtBuff * 100) + '%（用完即消失）'));
+    }
+
     const back = el('div', 'actions');
     const b = el('button', 'btn btn-primary', '回标题');
     b.onclick = () => go('title');
@@ -6127,12 +6162,38 @@ html, body {
     render();
   }
 
+  // 调参：只改"表现分"和"机会次数"，判定仍由 rollPurchase 决定
+  function applyTuningScore(taskId, score, run, mode) {
+    if (CLASSIC) return score;
+    let v = score;
+    const t = TASK_TUNING[taskId] || {};
+    if (t.riskAware) {
+      const risk = Math.max(0, Math.min(100, run.risk || 0));
+      v = Math.min(1, v + Math.max(0, (60 - risk)) / 150);   // 风控 0 → +0.4
+    }
+    if (taskId === 'X-4') {
+      const c = (buy.crowd || {});
+      const hits = typeof c.hits === 'number' ? c.hits : null;
+      const need = c.need || 6;
+      if (hits !== null) v = hits >= need ? 1 : Math.min(1, (hits / need) * 0.8);
+    }
+    return Math.min(1, v);
+  }
+
+  // 天赋加成：只加"表现分"，不改判定公式
+  function talentScoreBonus() {
+    const run = app2.run || {};
+    const mode = buy.mode;
+    if (run.school === 'hand' && mode === 'timing') return 0.08;
+    if (run.school === 'people' && (mode === 'crowd' || mode === 'queue' || mode === 'report')) return 0.10;
+    return 0;
+  }
+
   function buyBeginRound() {
     sysLagTick();
     setTimeout(() => {
       if (buy.phase !== 'intro' && buy.phase !== 'run') return;
-      const spike = sysLagNow > 260;
-      sysSay(spike ? 'lagSpike' : 'roundStart', { lag: sysLagNow });
+      hintFor('roundStart');
     }, 260);
     buy.phase = 'intro';
     buy.t = 0;
@@ -6309,7 +6370,7 @@ html, body {
     if (buy.phase !== 'run') return;
     if (judge.id === 'perfect') sysSay('perfect');
     else if (judge.id === 'good' || judge.id === 'ok') sysSay('ok');
-    else sysSay(Math.random() < 0.5 ? 'tooLate' : 'tooEarly');
+    else { sysSay(Math.random() < 0.5 ? 'tooLate' : 'tooEarly'); hintFor('fail'); }
     buy.phase = 'judge';
     buy.t = 0;
     buy.trapOn = false;
@@ -6318,7 +6379,7 @@ html, body {
 
     // 秒杀类每局都判：成了当场锁定，没成就继续下一局
     if (TIMING_MODES.indexOf(buy.mode) >= 0 && !buy.decided) {
-      const one = R.timingScoreOf([judge.id]);
+      const one = Math.min(1, R.timingScoreOf([judge.id]) + talentScoreBonus());
       const res = buyRollOnce(one);
       buy.results[buy.results.length - 1].won = res.success;
       if (res.success) {
@@ -6641,7 +6702,21 @@ html, body {
       level: run.level,
     };
     // 秒杀类已经在每局结束时判过了，这里只取结果，不要重判
-    const res = buy.lastRes || G.rollPurchase(run, buy.taskId, score);
+    const tuned = CLASSIC ? null : TASK_TUNING[buy.taskId];
+    const tunedScore = applyTuningScore(buy.taskId, score, run, buy.mode);
+    const res = buy.lastRes || (function () {
+      const tries = (tuned && tuned.tries) || 1;
+      const savedBuff = run.boughtBuff || 0;
+      const teachBuff = (tuned && tuned.buff) || 0;
+      let last = null;
+      for (let i = 0; i < tries; i++) {
+        run.boughtBuff = savedBuff + teachBuff;      // 教学加成只在这一判里生效
+        last = G.rollPurchase(run, buy.taskId, tunedScore);
+        if (last.success) break;
+      }
+      run.boughtBuff = savedBuff;                    // 还原，不写进存档
+      return last;
+    })();
     // 判定结果落到号池上：成功=你拿走一个号，失败=别人抢走一个
     let myNo = buy.myNo || null;
     if (buy.pool && !myNo) {
@@ -7333,9 +7408,7 @@ html, body {
         // 第一局没有走 buyBeginRound，这里补一次延迟刷新 + 旁白
         sysLagTick();
         setTimeout(() => {
-          if (buy.phase === 'intro' || buy.phase === 'run') {
-            sysSay(sysLagNow > 260 ? 'lagSpike' : 'roundStart', { lag: sysLagNow });
-          }
+          if (buy.phase === 'intro' || buy.phase === 'run') hintFor('roundStart');
         }, 220);
       };
       bar2.appendChild(goBtn);
@@ -7867,31 +7940,121 @@ html, body {
   // =========================================================================
   // 系统旁白：老父亲头像 + 气泡（抢票页右侧，随机嘲讽/提示）
   // =========================================================================
+
+  // =========================================================================
+  // 复刻版难度调参：只调整"几次机会"与表现分，判定仍走 rollPurchase 唯一入口
+  // ?classic=1 → 回到原版数值
+  // =========================================================================
+  const CLASSIC = /[?&]classic=1/.test(location.search);
+  const TASK_TUNING = {
+    'T0-1': { tries: 3, buff: 0.35, teach: true, note: '教学关：三次机会 + 教学加成（目标 ~85%）' },
+    'T2-3': { tries: 2, buff: 0.35, teach: true, note: '开张关：两次机会（目标 ~75%）' },
+    'T4-2': { tries: 2, buff: 0.17, teach: true, note: '终局前：两次机会（目标 ~60%）' },
+    'X-4':  { buff: 0.15, teach: true, note: '凑人头：人数够就过（目标 ~65%）' },
+    'T3-2': { riskAware: true, buff: 0.22, teach: true, note: '风控越低越容易躲过（目标 ~50%）' },
+  };
+
   const SYS_LINES = {
+    // 1) 开局
     roundStart: [
       '这一局延迟 {lag}ms，你自己看着办。',
       '别慌，慌也没用。',
       '手扣在按钮上，别眨眼。',
       '系统提示：抢不到是常态，别哭。',
+      '你前面还有 {queue} 个人，他们也在看屏幕。',
+      '呼吸。读秒归零之前别动手。',
+      '这一关的名字叫「{task}」，记住它。',
     ],
+    // 2) 操作指引（按模式）
+    guide: {
+      timing: ['指针进绿区再点，绿区在正中间。', '读秒别急，卡在中间那一下最值钱。', '抖一下没事，别整局都在抖。'],
+      rapid: ['一直点，别停，停一下就是 0 分。', '手速关，比的是次数不是准头。', '拇指别抬起来。'],
+      multi: ['哪个窗口亮就点哪个，别贪。', '三个窗口轮流亮，漏一个就掉档。', '眼睛跟光走。'],
+      slide: ['拖到亮起的座位段，松手确认。', '滑慢一点，别冲到隔壁座。', '核心区才是满分。'],
+      spot: ['带星的才是真票。', '灰星的别碰，那是假票。', '看清楚星再点。'],
+      crowd: ['先点「可报名」的人，凑够 {need} 个。', '「号被占」的点不动，别浪费手指。', '人头越多，中签率越高。'],
+      report: ['黄牛的话带价格，正常人不带。', '误报扣得比漏报多。', '看不准就放过。'],
+      verify: ['号码对一遍，对了再核销。', '核销完才算你的号。', '错一次会提示，别慌。'],
+      queue: ['守住位置，有人插队就拦。', '队伍会一直往前挤。', '被挤出去就前功尽弃。'],
+      haggle: ['一次砍一点，看着对方反应。', '砍太狠会直接谈崩。', '压到目标价就停手。'],
+      market: ['零售价高但慢，同行快但压价。', '行情会波动，别急着全出。', '大客户暴富或归零。'],
+    },
+    // 3) 失败诊断
+    failDiag: [
+      '慢了 0.2 秒，号已经被端走。',
+      '不是你手慢，是这一批就 3 个号。',
+      '这手速，建议去送外卖。',
+      '风控在涨，再刷视频会被盯上。',
+      '抢号的样子，像极了三年前的黄牛。',
+    ],
+    // 4) 保底 / 疲劳
+    pity: [
+      '系统给你加了保底：这一局比上一局更容易。',
+      '连续 {n} 次没中，保底在涨，别灰心。',
+      '同一关反复刷，成功率在往下掉。',
+      '心态要炸了。深呼吸，下一局表现分会减半。',
+    ],
+    // 5) 延迟 / 卡顿
+    lagSpike: [
+      '延迟 {lag}ms，这波判定吃亏。',
+      '网卡了，这波不怪你。',
+      '504 了，重连中…（其实没连）',
+      '后台在偷跑流量，你的手速被扣了。',
+    ],
+    // 6) 嘲讽 / 手感
     tooEarly: ['太早了！你以为你是机器？', '早了，号还没放呢。', '急什么，急能把号抢回来？'],
     tooLate: ['手呢？手呢！', '慢了，号被别人端走了。', '读秒归零了才动手，练过？'],
     ok: ['凑合，压线进。', '这手速，勉强能看。', '还行，别骄傲。'],
     perfect: ['哎哟，正中。', '这下手不抖啊。', '有点东西。'],
     trap: ['点广告了？加价的是别人。', '那个按钮是收费的，你点了。'],
     boost: ['刷视频加速？风控也在加速。', '加速包买了，风控也跟着涨。'],
-    lagSpike: ['网卡了，这波不怪你。', '延迟 {lag}ms，祈祷吧。'],
-    win: ['抢到了？运气好，别得意。', '号给你了，别弄丢。'],
+    // 7) 收尾
+    win: ['抢到了？运气好，别得意。', '号给你了，别弄丢。', '恭喜，你抢到了别人最想要的那张。'],
     lose: ['三局都没上，跟我没关系。', '空手回去，明天再来。'],
     empty: ['号放完了，跟你快慢无关。'],
   };
+
+
+  // 提示决策：按优先级挑一条，同类 8 秒内不重复
+  const hintCool = {};
+  function hintFor(event) {
+    const run = app2.run || {};
+    const now = Date.now();
+    const pick = (kind, extra) => {
+      if ((hintCool[kind] || 0) + 8000 > now) return null;
+      hintCool[kind] = now;
+      sysSay(kind, extra);
+      return true;
+    };
+    const failed = (buy.results || []).filter(r => r.won === false).length;
+    const tune = TASK_TUNING[buy.taskId] || {};
+
+    // 1) 延迟过高
+    if (sysLagNow > 260 && pick('lagSpike', { lag: sysLagNow })) return;
+    // 2) 该关实测通过率极低 → 先讲机制真相
+    if (tune.teach && event === 'roundStart' && pick('guide')) return;
+    // 3) 连败 ≥2 → 讲操作
+    if (failed >= 2 && pick('guide')) return;
+    // 4) 保底 / 疲劳
+    if ((run.failStreak || 0) >= 3 && pick('pity', { n: run.failStreak })) return;
+    if (event === 'fail' && pick('failDiag')) return;
+    // 5) 第 1 局 → 操作指引
+    if (event === 'roundStart' && buy.round === 0 && pick('guide')) return;
+    // 6) 其余
+    if (event === 'roundStart' && pick('roundStart', { lag: sysLagNow, queue: (buy.meta || {}).queueAhead || 6120, task: (D.TASKS[buy.taskId] || {}).name || '这一关' })) return;
+    if (event === 'fail') pick('failDiag');
+  }
 
   let sysBubbleTimer = null;
   function sysSay(kind, extra) {
     if (app2.screen !== 'buy') return;
     if (buy.phase === 'captcha' || buy.phase === 'howto') return;   // 这两屏别抢注意力
-    const pool = SYS_LINES[kind];
-    if (!pool) return;
+    let pool = SYS_LINES[kind];
+    if (kind === 'guide') {
+      const g = SYS_LINES.guide[buy.mode] || SYS_LINES.guide.timing;
+      pool = g;
+    }
+    if (!pool || !pool.length) return;
     const line = pool[Math.floor(Math.random() * pool.length)]
       .replace('{lag}', String((extra && extra.lag) || sysLag()));
     buy.sysMsg = line;
@@ -8434,6 +8597,22 @@ html, body {
   window.HN = {
     app: app2, buy, rules: R, engine: G,
     startTask: buyStart, tap: buyTap, settle: buySettle, go,
+    tuning: { table: TASK_TUNING, apply: applyTuningScore, classic: CLASSIC, talent: talentScoreBonus },
+    judge: function (taskId, score, run, mode) {
+      const t0 = CLASSIC ? null : TASK_TUNING[taskId];
+      const sc = applyTuningScore(taskId, score, run, mode);
+      const saved = run.boughtBuff || 0;
+      const tries = (t0 && t0.tries) || 1;
+      const buff = (t0 && t0.buff) || 0;
+      let last = null;
+      for (let i = 0; i < tries; i++) {
+        run.boughtBuff = saved + buff;
+        last = G.rollPurchase(run, taskId, sc);
+        if (last.success) break;
+      }
+      run.boughtBuff = saved;
+      return last;
+    },
   };
 })();
 
