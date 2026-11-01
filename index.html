@@ -3365,6 +3365,34 @@ html, body {
   letter-spacing: .01em;
 }
 
+/* 假装真实的手机系统弹窗（iOS 圆角卡片） */
+.phone-popup {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(0,0,0,.38);
+  display: flex; align-items: center; justify-content: center;
+  animation: ppIn .16s ease-out both;
+}
+@keyframes ppIn { from { opacity: 0 } to { opacity: 1 } }
+.pp-card {
+  width: min(280px, 76vw);
+  background: #FDF7EC;
+  border: 1px solid rgba(42,33,24,.22);
+  border-radius: 16px;
+  padding: 16px 16px 12px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.28);
+  text-align: center;
+}
+.pp-title { font-size: 14px; font-weight: 800; color: #2A2118; line-height: 1.35; }
+.pp-body { margin-top: 8px; font-size: 12px; line-height: 1.5; color: #5E4F3F; }
+.pp-actions { display: flex; gap: 8px; margin-top: 14px; }
+.pp-btn {
+  flex: 1; height: 38px; border-radius: 9px; cursor: pointer;
+  font-size: 13px; font-weight: 600;
+  border: 1px solid rgba(42,33,24,.18);
+  background: #F3E7D4; color: #2A2118;
+}
+.pp-btn.primary { background: rgba(181,52,42,.12); border-color: rgba(181,52,42,.35); color: #B5342A; font-weight: 800; }
+
 </style>
 </head>
 <body>
@@ -4916,6 +4944,42 @@ html, body {
       "这一局你输给了一个手比你抖得晚的人。",
       "别急着退出，下一局我给你透点内幕。",
     ],
+    boast: [
+      "统子哥出手，从没失手过——我说的是我自己。",
+      "我这一套系统，抢过的号比你吃过的饭多。",
+      "别紧张，跟着我念：0 秒，按。就这么简单。",
+      "当年我一句话，全城六个号自己飞过来。",
+      "我这系统上线三年，用户哭着求我别停。",
+      "手速这玩意儿能练，跟着我练三天。",
+      "你运气不错，遇上我这种良心系统。",
+      "抢号不是技术活，是心态活。心态我给你调好了。",
+      "看好了，这一局我教你怎么当人上人。",
+      "全城几千人盯着，我就挑中了你。别浪费。",
+    ],
+    crash: [
+      "翻车了吧。嘴上说着稳，手上没有。",
+      "这波操作，够我给你写进教学案例了。",
+      "抢号失败。别急着怪网，先看看自己的手指。",
+      "我见过手慢的，没见过慢得这么匀的。",
+      "又空手？你这不是抢号，是来围观放号的。",
+      "行，这一局你贡献了一个分母。",
+      "翻车不丢人，翻车还嘴硬才丢人。",
+      "系统提示：本次操作已被全城六千人围观。",
+      "这手一抖，抖掉了一顿饭钱。",
+      "别问我为什么没抢到，我只负责拱火。",
+    ],
+    comfort: [
+      "连着几把了。要不先喝口水？号不会跑。",
+      "别上头。抢不到的人多了，你不是最惨的那个。",
+      "输几把很正常，保底我都给你记着呢。",
+      "我知道你不服，不服就再来一把，但先喘口气。",
+      "手抖是正常的，抖完记得再按。",
+      "这游戏本来就不公平，别拿它证明自己。",
+      "放下手机两分钟，回来手就稳了。",
+      "别盯着失败次数看，盯着下一局的倒计时。",
+      "你不是抢不到，是这一批只有三个号。",
+      "我说句实话：你今天手气确实差。但明天呢？",
+    ],
     taunt: [
       "人家黄牛一天出货三十单，你还在为一张票激动。",
       "抢号这件事，从来不缺人替你排队。",
@@ -4962,6 +5026,29 @@ html, body {
   }
 
   return { BANTER: BANTER, pickBanter: pickBanter };
+});
+
+</script>
+  <script>
+// 由 tools/gen-banter.cjs 从 scripts/data/PhonePopups.lua 生成 —— 不要手改
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  if (root) { root.PHONE_POPUPS = api.PHONE_POPUPS; root.pickPopup = api.pickPopup; }
+})(typeof window !== 'undefined' ? window : null, function () {
+  const PHONE_POPUPS = [10];
+  PHONE_POPUPS[0] = {"id":"storage","title":"iPhone 存储空间几乎已满","body":"可以管理储存空间，或在设置中购买更多空间。清理之前，部分 App 可能无法正常工作。","ok":"以后再说","alt":"去设置"};
+  PHONE_POPUPS[1] = {"id":"battery","title":"低电量模式","body":"低电量模式将暂时减少后台活动，直到 iPhone 完成充电。","ok":"好","alt":null};
+  PHONE_POPUPS[2] = {"id":"update","title":"iOS 更新可用","body":"新的 iOS 版本已可安装。今晚连接电源和无线局域网时将自动安装。","ok":"稍后","alt":"现在安装"};
+  PHONE_POPUPS[3] = {"id":"wechat","title":"微信","body":"「二舅」发来一条消息：抢到了吗？帮我抢一个呗。","ok":"知道了","alt":"回复"};
+  PHONE_POPUPS[4] = {"id":"location","title":"允许「饱了么」使用你的位置？","body":"用于推荐附近门店、计算到店距离。拒绝后部分功能可能无法使用。","ok":"使用 App 时允许","alt":"不允许"};
+  PHONE_POPUPS[5] = {"id":"appupdate","title":"有 1 个 App 需要更新","body":"「饱了么」有新版本可用，更新后需要重新登录一次。","ok":"稍后","alt":"更新"};
+  PHONE_POPUPS[6] = {"id":"family","title":"家人共享","body":"「小雨」请求使用你的 Apple 账户购买项目。此请求将在 24 小时后过期。","ok":"拒绝","alt":"允许"};
+  PHONE_POPUPS[7] = {"id":"nosignal","title":"无服务","body":"你的蜂窝数据网络当前不可用。将自动切换至其他可用网络。","ok":"好","alt":null};
+  PHONE_POPUPS[8] = {"id":"screentime","title":"屏幕使用时间","body":"你已使用「饱了么」达到今日限额 1 小时。可以再使用 15 分钟，或忽略限额。","ok":"再给 15 分钟","alt":"好"};
+  PHONE_POPUPS[9] = {"id":"backup","title":"iCloud 备份失败","body":"上次备份未能完成，因为 iPhone 没有连接到无线局域网。","ok":"好","alt":"查看设置"};
+  function pickPopup() { return PHONE_POPUPS[Math.floor(Math.random() * PHONE_POPUPS.length)]; }
+  return { PHONE_POPUPS: PHONE_POPUPS, pickPopup: pickPopup };
 });
 
 </script>
@@ -6148,6 +6235,8 @@ ${it.desc}`);
     buy.myNo = null;
     buy.lockDone = false;      // 第二段判定：换关卡必须重置，否则下一关会跳过
     buy.reloadUsed = false;    // 假重载：一关最多一次
+    buy.popupUsed = false;     // 系统弹窗：一关最多一次
+    buy.popup = null;
     buy.lockScore = null;
     buy.lock = null;
     buy.capitalPaid = 0;
@@ -6416,6 +6505,15 @@ ${it.desc}`);
 
   function buyBeginRound() {
     sysLagTick();
+    // 真手机会在你要紧的时候弹东西：一场最多一次，12%
+    const POPUP_CHANCE = /[?&]popup=always/.test(location.search) ? 1 : 0.12;
+    if (!buy.popupUsed && (buy.round || 0) >= 1 && Math.random() < POPUP_CHANCE) {
+      buy.popupUsed = true;
+      buy.popup = pickPopup();
+      buy.phase = 'popup';
+      render();
+      return;
+    }
     if (sysTryFakeReload()) return;    // 断网重载：播完自己再调一次 buyBeginRound
     setTimeout(() => {
       if (buy.phase !== 'intro' && buy.phase !== 'run') return;
@@ -6429,6 +6527,7 @@ ${it.desc}`);
   }
 
   function buyTick(dt) {
+    if (buy.popup) return;         // 系统弹窗盖着：读秒冻结（真实手机也点不到）
     if (buy.call) return;          // 来电中：读秒冻结
     buy.t += dt;
 
@@ -7628,6 +7727,30 @@ ${it.desc}`);
     app.innerHTML = '';
 
     const shell = SHELL_DEFS[buy.shell || 'bao'];
+    if (buy.popup) {
+      const p = buy.popup;
+      const veil = el('div', 'phone-popup',
+        '<div class="pp-card">'
+        + '<div class="pp-title">' + esc(p.title) + '</div>'
+        + '<div class="pp-body">' + esc(p.body) + '</div>'
+        + '<div class="pp-actions">'
+        + (p.alt ? '<button class="pp-btn" data-role="ppAlt">' + esc(p.alt) + '</button>' : '')
+        + '<button class="pp-btn primary" data-role="ppOk">' + esc(p.ok) + '</button>'
+        + '</div></div>');
+      app.appendChild(veil);
+      const closePopup = () => {
+        buy.popup = null;
+        buy.phase = 'intro';
+        buy.t = 0;
+        sysSay('crash');
+        render();
+      };
+      veil.querySelector('[data-role="ppOk"]').onclick = closePopup;
+      const altBtn = veil.querySelector('[data-role="ppAlt"]');
+      if (altBtn) altBtn.onclick = closePopup;
+      return;
+    }
+
     if (buy.phase === 'reload') {
       // 假重载：白屏 + 转圈 + 一句"正在重新连接"，别盖太久（1.1~1.6s）
       app.appendChild(el('div', 'reload-veil',
@@ -8303,6 +8426,9 @@ ${it.desc}`);
     taunt: BANTER.taunt,
     pity: BANTER.pity,
     story: BANTER.story,
+    boast: BANTER.boast,
+    crash: BANTER.crash,
+    comfort: BANTER.comfort,
 
     // 操作指引（按模式）
     guide: {
@@ -8352,6 +8478,8 @@ ${it.desc}`);
 
     // 1) 延迟过高
     if (sysLagNow > 260 && pick('lagSpike', { lag: sysLagNow })) return;
+    // 1.5) 连败 ≥2 → 先安慰（比讲操作更像人）
+    if ((run.failStreak || 0) >= 2 && event === 'fail' && pick('comfort')) return;
     // 2) 该关实测通过率极低 → 先讲机制真相
     if (tune.teach && event === 'roundStart' && pick('guide')) return;
     // 3) 连败 ≥2 → 讲操作
@@ -8359,8 +8487,11 @@ ${it.desc}`);
     // 4) 保底 / 疲劳
     if ((run.failStreak || 0) >= 3 && pick('pity', { n: run.failStreak })) return;
     if (event === 'fail' && pick('failDiag')) return;
-    // 5) 第 1 局 → 操作指引
+    // 5) 第 1 局 → 统子哥先吹一段
+    if (event === 'roundStart' && buy.round === 0 && pick('boast')) return;
     if (event === 'roundStart' && buy.round === 0 && pick('guide')) return;
+    // 5.5) 翻车 → 嘲讽一句
+    if (event === 'fail' && pick('crash')) return;
     // 6) 其余
     if (event === 'roundStart' && pick('roundStart', { lag: sysLagNow, queue: (buy.meta || {}).queueAhead || 6120, task: (D.TASKS[buy.taskId] || {}).name || '这一关' })) return;
     if (event === 'fail') pick('failDiag');
