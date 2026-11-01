@@ -3142,6 +3142,107 @@ html, body {
   .tap-ripple { animation-duration: 1ms; }
 }
 
+/* ============================================================================
+   消息中心（客服点开）+ 来电界面
+   ============================================================================ */
+.notif-sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 45;
+  max-height: 72%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  background: var(--cm-card);
+  border-top: 3px solid var(--cm-line);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
+  animation: sheetUp 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+.notif-head { display: flex; align-items: center; justify-content: space-between; }
+.notif-title { font-size: 17px; font-weight: 800; color: var(--cm-ink); }
+.notif-close {
+  font-size: 12px;
+  color: var(--cm-ink);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--cm-line);
+  background: var(--cm-paper);
+}
+.notif-sub { font-size: 11px; color: var(--cm-ink-soft); }
+.notif-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+.notif-item {
+  background: var(--cm-paper);
+  border: 2px solid var(--cm-line);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.notif-item.call-log { border-style: dashed; }
+.ni-top { display: flex; align-items: baseline; justify-content: space-between; }
+.ni-app { font-size: 11px; font-weight: 800; color: var(--cm-ink); }
+.ni-time { font-size: 10px; color: var(--cm-ink-soft); }
+.ni-text { font-size: 12.5px; line-height: 1.45; color: var(--cm-ink); }
+.notif-empty { font-size: 12px; color: var(--cm-ink-soft); padding: 16px 2px; text-align: center; }
+
+/* 来电：整屏 */
+.call-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  background: linear-gradient(180deg, #241A12 0%, #0E0A07 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(72px + env(safe-area-inset-top)) 24px calc(54px + env(safe-area-inset-bottom));
+  transform-origin: center top;
+  animation: callIn 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes callIn { from { transform: scale(1.04); } to { transform: none; } }
+.call-top { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.call-avatar {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #FFE9B8, #F3C060);
+  border: 3px solid rgba(255, 247, 234, 0.85);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 800; color: #8F2519;
+  animation: callPulse 1.8s ease-in-out infinite;
+}
+@keyframes callPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 247, 234, 0.18); }
+  50% { transform: scale(1.03); box-shadow: 0 0 0 14px rgba(255, 247, 234, 0); }
+}
+.call-name { font-size: 24px; font-weight: 800; color: #FFF7EA; letter-spacing: 2px; }
+.call-state { font-size: 12px; color: rgba(255, 247, 234, 0.7); letter-spacing: 1px; }
+.call-hint {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 247, 234, 0.82);
+  text-align: center;
+  max-width: 20em;
+}
+.call-actions { display: flex; gap: 28px; }
+.call-btn {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 247, 234, 0.5);
+  font-size: 14px;
+  font-weight: 800;
+  color: #FFF7EA;
+  letter-spacing: 1px;
+}
+.call-btn.decline { background: #B5342A; }
+.call-btn.answer { background: #2E7D4F; }
+@media (prefers-reduced-motion: reduce) {
+  .call-avatar { animation: none; }
+  .notif-sheet { animation: none; }
+  .call-screen { animation: none; }
+}
+
 </style>
 </head>
 <body>
@@ -5982,6 +6083,7 @@ html, body {
   }
 
   function buyTick(dt) {
+    if (buy.call) return;          // 来电中：读秒冻结
     buy.t += dt;
 
     if (buy.phase === 'intro') {
@@ -6075,6 +6177,15 @@ html, body {
     }
 
     if (buy.phase === 'run') {
+      // 来电打断：一局里最多一次，落在读秒 45%~60% 区间
+      if (!buy.callDone && app2.run && (app2.run.day || 1) >= 2
+          && buy.t > buy.totalMs * 0.45 && buy.t < buy.totalMs * 0.62
+          && Math.random() < 0.55) {
+        buy.callDone = true;
+        buy.call = { state: 'ringing' };
+        render();
+        return;
+      }
       // 假按钮：第 2、3 局中途出现（点了就是空手）
       if (buy.round >= 1 && !buy.trapUsed && !buy.trapOn && buy.t > buy.totalMs * 0.35) {
         buy.trapOn = true;
@@ -7130,7 +7241,9 @@ html, body {
        </span>`));
     scroll.appendChild(el('div', 'bao-nav',
       `<span class="back">‹</span><span class="title">${esc(shell.title)}</span>
-       <span class="nav-right"><span class="cs-chip">客服<i class="cs-dot"></i></span><span class="fav">${esc(shell.right)}</span></span>`));
+       <span class="nav-right"><span class="cs-chip" data-role="csChip">客服${(buy.unread || 0) > 0 ? '<i class="cs-dot"></i>' : ''}</span><span class="fav">${esc(shell.right)}</span></span>`));
+    const csChip = scroll.querySelector('[data-role="csChip"]');
+    if (csChip) csChip.onclick = () => { buy.panelOpen = true; buy.unread = 0; render(); };
     scroll.appendChild(el('div', 'bao-account',
       `<span>余额 ¥${esc(run.money || 0)}</span><span>会员 Lv.${(run.level || 0) + 1}</span><span>第 ${esc(run.day || 1)} 天</span>`));
 
@@ -7532,6 +7645,73 @@ html, body {
     }
     s.appendChild(bottom);
 
+    // 来电界面：整屏，接听/挂断
+    if (buy.call) {
+      const ringing = buy.call.state === 'ringing';
+      const callEl = el('div', 'call-screen');
+      callEl.innerHTML = `
+        <div class="call-top">
+          <div class="call-avatar">父</div>
+          <div class="call-name">老父亲</div>
+          <div class="call-state">${ringing ? '来电中…' : '通话中…'}</div>
+        </div>
+        <div class="call-hint">${ringing ? '系统提示：这通电话会影响你这一局' : '「喂？抢到了没？」'}</div>
+        ${ringing ? `<div class="call-actions">
+          <button class="call-btn decline" data-role="callDecline">挂断</button>
+          <button class="call-btn answer" data-role="callAnswer">接听</button>
+        </div>` : `<div class="call-actions"><button class="call-btn decline" data-role="callHangup">挂断</button></div>`}`;
+      s.appendChild(callEl);
+      const dec = callEl.querySelector('[data-role="callDecline"]');
+      const ans = callEl.querySelector('[data-role="callAnswer"]');
+      const hang = callEl.querySelector('[data-role="callHangup"]');
+      const endCall = (answered) => {
+        buy.callLog = buy.callLog || [];
+        const d = new Date();
+        const at = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        buy.callLog.unshift({ at: at, t: answered ? '接听了老父亲的电话（这一局废了）' : '挂断了老父亲的电话' });
+        buy.call = null;
+        if (answered) {
+          G.addRisk(app2.run, 2);
+          if (buy.phase === 'run') buyJudge(R.JUDGES.miss, '在接电话，手没腾出来');
+        }
+        save();
+        render();
+      };
+      if (dec) dec.onclick = () => endCall(false);
+      if (hang) hang.onclick = () => endCall(false);
+      if (ans) ans.onclick = () => {
+        buy.call = { state: 'answered' };
+        render();
+        setTimeout(() => { if (buy.call && buy.call.state === 'answered') endCall(true); }, 1600);
+      };
+    }
+
+    // 消息中心（客服点开）：系统历史消息 + 来电记录
+    if (buy.panelOpen && !buy.call) {
+      const sheet = el('div', 'notif-sheet');
+      const log = buy.sysLog || [];
+      sheet.innerHTML = `
+        <div class="notif-head">
+          <span class="notif-title">消息</span>
+          <span class="notif-close" data-role="notifClose">关闭</span>
+        </div>
+        <div class="notif-sub">黄牛模拟器 · 系统通知</div>
+        <div class="notif-list">
+          ${log.length ? log.map(m => `
+            <div class="notif-item">
+              <div class="ni-top"><span class="ni-app">系统</span><span class="ni-time">${esc(m.at)}</span></div>
+              <div class="ni-text">${esc(m.t)}</div>
+            </div>`).join('') : '<div class="notif-empty">还没有系统消息。抢几局就有了。</div>'}
+          <div class="notif-item call-log">
+            <div class="ni-top"><span class="ni-app">电话</span><span class="ni-time">${(buy.callLog || []).length ? esc(buy.callLog[0].at) : '—'}</span></div>
+            <div class="ni-text">${(buy.callLog || []).length ? esc(buy.callLog[0].t) : '暂无来电记录'}</div>
+          </div>
+        </div>`;
+      s.appendChild(sheet);
+      const close = sheet.querySelector('[data-role="notifClose"]');
+      if (close) close.onclick = () => { buy.panelOpen = false; render(); };
+    }
+
     // 底部 Home 指示条（手机感）
     const hi = el('div', 'home-indicator');
     s.appendChild(hi);
@@ -7649,6 +7829,13 @@ html, body {
       .replace('{lag}', String((extra && extra.lag) || sysLag()));
     buy.sysMsg = line;
     buy.sysAt = Date.now();
+    buy.sysLog = buy.sysLog || [];
+    buy.unread = (buy.unread || 0);
+    const hh = new Date();
+    const stamp = String(hh.getHours()).padStart(2, '0') + ':' + String(hh.getMinutes()).padStart(2, '0');
+    buy.sysLog.unshift({ t: line, at: stamp });
+    if (buy.sysLog.length > 30) buy.sysLog.length = 30;
+    buy.unread += 1;
     render();                                   // 让浮层跟着这次重绘一起出现
     if (sysBubbleTimer) clearTimeout(sysBubbleTimer);
     sysBubbleTimer = setTimeout(() => {
