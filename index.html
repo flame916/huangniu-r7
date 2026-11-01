@@ -3008,6 +3008,119 @@ html, body {
   }
 }
 
+/* ============================================================================
+   抢票页拟真细节：网络延迟条、刷新动效、抖动的排队数字
+   ============================================================================ */
+.lag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--cm-ink-soft);
+}
+.lag-chip {
+  font-variant-numeric: tabular-nums;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid var(--cm-line);
+  background: var(--cm-card);
+  color: var(--cm-ink);
+  font-weight: 700;
+}
+.lag-chip.bad { color: #FFF7EA; background: var(--cm-red); border-color: var(--cm-red-dark); }
+.lag-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--cm-green);
+  box-shadow: 0 0 0 0 rgba(127, 191, 106, 0.6);
+  animation: lagPulse 1.6s ease-out infinite;
+}
+.lag-dot.bad { background: var(--cm-red); }
+@keyframes lagPulse {
+  0% { box-shadow: 0 0 0 0 rgba(127, 191, 106, 0.5); }
+  70% { box-shadow: 0 0 0 7px rgba(127, 191, 106, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(127, 191, 106, 0); }
+}
+.lag-label { display: flex; align-items: center; gap: 6px; }
+.lag-sep { color: rgba(42, 33, 24, 0.35); }
+/* 旁白浮层：贴在门店图上沿右侧，不挡操作 */
+.screen { position: relative; }
+
+/* 排队数字的"刷新中"闪烁 */
+@keyframes numFlicker {
+  0%, 100% { opacity: 1; }
+  48% { opacity: 1; }
+  50% { opacity: 0.55; }
+  52% { opacity: 1; }
+}
+.bao .queue-col .a { animation: numFlicker 3.6s ease-in-out infinite; }
+
+/* ============================================================================
+   老父亲头像 + 气泡
+   ============================================================================ */
+.sys-float {
+  position: absolute;
+  right: 10px;
+  top: calc(env(safe-area-inset-top) + 118px);
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  pointer-events: none;
+}
+.sys-bubble {
+  max-width: 58vw;
+  white-space: normal;
+  word-break: break-word;
+}
+.sys-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, #FFE9B8, #F3C060);
+  border: 2px solid var(--cm-line);
+  box-shadow: 0 2px 0 rgba(42, 33, 24, 0.85);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  animation: sysNod 2.8s ease-in-out infinite;
+}
+.sys-avatar i {
+  font-style: normal;
+  font-size: 17px;
+  font-weight: 800;
+  color: #8F2519;
+}
+@keyframes sysNod {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-3px) rotate(2deg); }
+}
+.sys-bubble {
+  position: relative;
+  background: var(--cm-card);
+  border: 2px solid var(--cm-line);
+  border-radius: 12px;
+  padding: 7px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--cm-ink);
+  box-shadow: 0 2px 0 rgba(42, 33, 24, 0.8);
+  opacity: 0;
+  transform: translateY(-4px) scale(0.96);
+  transition: opacity 180ms ease-out, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sys-bubble.show { opacity: 1; transform: none; }
+.sys-bubble::before {
+  content: '';
+  position: absolute;
+  left: -7px; top: 14px;
+  width: 10px; height: 10px;
+  background: var(--cm-card);
+  border-left: 2px solid var(--cm-line);
+  border-bottom: 2px solid var(--cm-line);
+  transform: rotate(45deg);
+}
+
 </style>
 </head>
 <body>
@@ -4774,6 +4887,7 @@ html, body {
   }
 
   function boostStart() {
+    sysSay('boost');
     boostReset();
     buy.boost.running = true;
     go('boost');
@@ -5833,6 +5947,12 @@ html, body {
   }
 
   function buyBeginRound() {
+    sysLagTick();
+    setTimeout(() => {
+      if (buy.phase !== 'intro' && buy.phase !== 'run') return;
+      const spike = sysLagNow > 260;
+      sysSay(spike ? 'lagSpike' : 'roundStart', { lag: sysLagNow });
+    }, 260);
     buy.phase = 'intro';
     buy.t = 0;
     buy.tapped = false;
@@ -5996,6 +6116,9 @@ html, body {
 
   function buyJudge(judge, label) {
     if (buy.phase !== 'run') return;
+    if (judge.id === 'perfect') sysSay('perfect');
+    else if (judge.id === 'good' || judge.id === 'ok') sysSay('ok');
+    else sysSay(Math.random() < 0.5 ? 'tooLate' : 'tooEarly');
     buy.phase = 'judge';
     buy.t = 0;
     buy.trapOn = false;
@@ -6011,8 +6134,10 @@ html, body {
         buy.decided = 'win';
         const no = buyIssueNumber();
         if (no) toast('抢到了 · ' + no);
+        sysSay('win');
       } else if (buy.round + 1 >= R.ROUNDS) {
         buy.decided = 'lose';
+        sysSay('lose');
       }
       render();
     }
@@ -6241,6 +6366,7 @@ html, body {
   }
 
   function buyTrap() {
+    sysSay('trap');
     if (buy.phase !== 'run') return;
     buy.trapUsed = true;
     buy.trapOn = false;
@@ -6987,6 +7113,13 @@ html, body {
         buy.phase = 'intro';
         buy.t = 0;
         render();
+        // 第一局没有走 buyBeginRound，这里补一次延迟刷新 + 旁白
+        sysLagTick();
+        setTimeout(() => {
+          if (buy.phase === 'intro' || buy.phase === 'run') {
+            sysSay(sysLagNow > 260 ? 'lagSpike' : 'roundStart', { lag: sysLagNow });
+          }
+        }, 220);
       };
       bar2.appendChild(goBtn);
       s.appendChild(bar2);
@@ -7338,6 +7471,15 @@ html, body {
     }
     s.appendChild(bottom);
 
+    // 系统旁白头像（老父亲）：跟着状态渲染，重绘也不会丢
+    if (buy.sysMsg && Date.now() - (buy.sysAt || 0) < 4000) {
+      const fl = el('div', 'sys-float');
+      fl.innerHTML = `<div class="sys-avatar" aria-hidden="true"><i>父</i></div>
+        <div class="sys-bubble show"></div>`;
+      fl.querySelector('.sys-bubble').textContent = buy.sysMsg;
+      s.appendChild(fl);
+    }
+
     // 假按钮
     if (buy.trapOn) {
       const trap = el('button', 'trap', shell.trap);
@@ -7362,6 +7504,12 @@ html, body {
       </div>
       <div class="shop-name">山城老灶 · 悬崖火锅</div>
       <div class="shop-addr">南岸区 · 悬崖路 88 号 · 距您 3.2km</div>
+      <div class="lag-row">
+        <span class="lag-label"><span class="lag-dot" data-role="lagDot"></span>网络延迟</span>
+        <span class="lag-chip" data-role="lagChip">${sysLag()}ms</span>
+        <span class="lag-sep">·</span>
+        <span>${buy.round === 0 ? '正在刷新号源…' : '已刷新 ' + buy.round + ' 次'}</span>
+      </div>
       <div class="photo photo-comic">
         <div class="comic-sign">悬崖火锅</div>
         <div class="comic-tip">今晚只剩 <b>3</b> 个号</div>
@@ -7409,6 +7557,66 @@ html, body {
       <div class="i">· 一个账号每天最多取 3 个号</div>
       <div class="i">· 本店不接待代排队、代取号服务</div>`;
     scroll.appendChild(notes);
+  }
+
+
+  // =========================================================================
+  // 系统旁白：老父亲头像 + 气泡（抢票页右侧，随机嘲讽/提示）
+  // =========================================================================
+  const SYS_LINES = {
+    roundStart: [
+      '这一局延迟 {lag}ms，你自己看着办。',
+      '别慌，慌也没用。',
+      '手扣在按钮上，别眨眼。',
+      '系统提示：抢不到是常态，别哭。',
+    ],
+    tooEarly: ['太早了！你以为你是机器？', '早了，号还没放呢。', '急什么，急能把号抢回来？'],
+    tooLate: ['手呢？手呢！', '慢了，号被别人端走了。', '读秒归零了才动手，练过？'],
+    ok: ['凑合，压线进。', '这手速，勉强能看。', '还行，别骄傲。'],
+    perfect: ['哎哟，正中。', '这下手不抖啊。', '有点东西。'],
+    trap: ['点广告了？加价的是别人。', '那个按钮是收费的，你点了。'],
+    boost: ['刷视频加速？风控也在加速。', '加速包买了，风控也跟着涨。'],
+    lagSpike: ['网卡了，这波不怪你。', '延迟 {lag}ms，祈祷吧。'],
+    win: ['抢到了？运气好，别得意。', '号给你了，别弄丢。'],
+    lose: ['三局都没上，跟我没关系。', '空手回去，明天再来。'],
+    empty: ['号放完了，跟你快慢无关。'],
+  };
+
+  let sysBubbleTimer = null;
+  function sysSay(kind, extra) {
+    if (app2.screen !== 'buy') return;
+    if (buy.phase === 'captcha' || buy.phase === 'howto') return;   // 这两屏别抢注意力
+    const pool = SYS_LINES[kind];
+    if (!pool) return;
+    const line = pool[Math.floor(Math.random() * pool.length)]
+      .replace('{lag}', String((extra && extra.lag) || sysLag()));
+    buy.sysMsg = line;
+    buy.sysAt = Date.now();
+    render();                                   // 让浮层跟着这次重绘一起出现
+    if (sysBubbleTimer) clearTimeout(sysBubbleTimer);
+    sysBubbleTimer = setTimeout(() => {
+      if (!buy.sysMsg) return;
+      buy.sysMsg = null;
+      if (app2.screen === 'buy') render();
+    }, 3600);
+  }
+
+  // 假延迟：大部分时间 30–120ms，偶尔飙到 300–900ms
+  let sysLagNow = 64;
+  function sysLag() { return sysLagNow; }
+  function sysLagTick() {
+    const spike = Math.random() < 0.12;
+    sysLagNow = spike
+      ? 300 + Math.floor(Math.random() * 600)
+      : 28 + Math.floor(Math.random() * 110);
+    const dot = document.querySelector('[data-role="lagDot"]');
+    if (dot) dot.classList.toggle('bad', sysLagNow > 260);
+    const chip = document.querySelector('[data-role="lagChip"]');
+    if (chip) {
+      chip.textContent = sysLagNow + 'ms';
+      chip.classList.toggle('bad', sysLagNow > 260);
+    }
+    return spike;
   }
 
   // ---- 进局前的"怎么玩" -----------------------------------------------------
