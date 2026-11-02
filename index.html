@@ -2796,6 +2796,14 @@ html, body {
 
 /* 结局：图更高、标题压在图上、剧终红章 */
 .story-scene.is-ending { min-height: 300px; max-height: 420px; }
+/* 矮视口（≤880 高，如 390×844）：插画收 40px，保证结局页「回到标题」首屏可见、不靠滑 */
+@media (max-height: 880px) {
+  .story-scene.is-ending { flex: 0 0 auto; height: 210px; min-height: 210px; max-height: 210px; }
+  /* 后台卡收紧两处，和上面的插画一起把「回到标题」抬回首屏（不靠滑、不遮挡文字） */
+  .v-b .mb-bar { padding: 7px 12px; }
+  .v-b .mb-table { padding-bottom: 4px; }
+  .v-b .mb-note { padding-top: 6px; padding-bottom: 8px; }
+}
 .ending-lockup {
   position: absolute;
   left: 16px;
@@ -3454,6 +3462,7 @@ html, body {
 .v-b .mb-note { margin: 0; padding: 8px 12px 11px; border-top: 1px solid rgba(255,255,255,.06); }
 
 </style>
+<meta name="hn-build" content="bd96744+dirty @ 2026-11-02T11:05">
 </head>
 <body>
   <div id="app"></div>
@@ -6102,6 +6111,7 @@ ${it.desc}`);
     if (!node) { toast('剧情节点不存在：' + run.nodeId); return; }
 
     app.innerHTML = '';
+    const isEnding = node.type === 'ending';
     const s = el('div', 'screen dark');
     s.innerHTML = hud(run);
 
@@ -6189,7 +6199,6 @@ ${it.desc}`);
       markTypedDone();
       return true;
     };
-    const isEnding = node.type === 'ending';
     if (!isEnding) {
       s.appendChild(card);
       // 统子哥的碎嘴：每个节点固定一句（存到 run.banter，翻页回来不换）
@@ -9270,5 +9279,6 @@ ${it.desc}`);
 })();
 
 </script>
+<script>window.HN_BUILD = "bd96744+dirty @ 2026-11-02T11:05";</script>
 </body>
 </html>
