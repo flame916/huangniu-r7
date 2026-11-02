@@ -2,9 +2,6 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3393,6 +3390,69 @@ html, body {
 }
 .pp-btn.primary { background: rgba(181,52,42,.12); border-color: rgba(181,52,42,.35); color: #B5342A; font-weight: 800; }
 
+/* 结局 A：小麦票务后台（一眼看出是野鸡站）—— 两版并存，定稿后删掉没选上的那版 */
+.mini-backend {
+  margin: 10px 12px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(26,21,16,.94) 0%, rgba(17,13,9,.96) 100%);
+  border: 1px solid rgba(255,193,60,.3);
+  box-shadow: inset 0 1px 0 rgba(255,215,140,.08);
+  flex: 0 0 auto;          /* 不被 flex 压扁：压扁了里面的行会溢出、跟下面的对话卡叠字 */
+}
+.mb-head { display: flex; align-items: center; gap: 6px; }
+.mb-head b { font-size: 15px; font-weight: 800; color: var(--gold, #FFC93C); letter-spacing: .02em; }
+.mb-tag { font-size: 10px; padding: 1px 6px; border-radius: 5px; color: #E8C070; border: 1px solid rgba(255,193,60,.32); }
+.mb-on { margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 10px; color: #34C759; white-space: nowrap; }
+.mb-dot { width: 6px; height: 6px; border-radius: 50%; background: #34C759; box-shadow: 0 0 0 2px rgba(52,199,89,.18); flex: none; }
+.mb-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: #A2957F; margin-top: 6px; }
+.mb-row span { flex: none; }
+.mb-row b {
+  color: #F6EAD8; font-weight: 700; font-variant-numeric: tabular-nums;
+  text-align: right; white-space: nowrap;
+}
+.mb-row b.bad { color: #FF5A4E; }
+.mb-note { margin-top: 8px; padding-top: 7px; border-top: 1px solid rgba(255,193,60,.1); font-size: 10px; line-height: 1.5; color: #9C9081; }
+
+/* ── B 版：整幅「运营后台」面板 ─────────────────────────────────── */
+.mini-backend.v-b {
+  padding: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1D1B16 0%, #141310 100%);
+  border-color: rgba(255,193,60,.24);
+  box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.v-b .mb-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px;
+  background: rgba(255,193,60,.08);
+  border-bottom: 1px solid rgba(255,193,60,.16);
+}
+.v-b .mb-bar b { font-size: 14px; font-weight: 800; color: var(--gold, #FFC93C); letter-spacing: .02em; }
+.v-b .mb-bar-sub { font-size: 10px; color: #8E8E93; padding-left: 8px; border-left: 1px solid rgba(255,255,255,.14); line-height: 1.1; }
+.v-b .mb-table { padding: 2px 12px 7px; }
+.v-b .mb-tr { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; font-size: 11px; color: #A2957F; }
+.v-b .mb-tr + .mb-tr { border-top: 1px solid rgba(255,255,255,.06); }
+.v-b .mb-tr span { flex: none; }
+.v-b .mb-tr b {
+  margin-left: auto; font-size: 13px; font-weight: 800; color: #F2E7D6;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.v-b .mb-tr em { flex: none; width: 56px; text-align: right; font-style: normal; font-size: 10px; color: #8E8E93; }
+.v-b .mb-alert { padding: 8px 12px 11px; background: rgba(255,69,58,.07); border-top: 1px solid rgba(255,69,58,.22); }
+.v-b .mb-alert-top { display: flex; align-items: baseline; gap: 8px; font-size: 11px; color: #FF8A80; }
+.v-b .mb-alert-top b {
+  margin-left: auto; font-size: 13px; font-weight: 800; color: #FF5A4E;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.v-b .mb-alert-top em { flex: none; width: 56px; text-align: right; font-style: normal; font-size: 10px; color: #8E8E93; }
+/* 风险条：十格满格，比一根通栏满条看得像“量表” */
+.v-b .mb-gauge { margin-top: 7px; display: flex; gap: 3px; }
+.v-b .mb-gauge i { flex: 1 1 0; height: 6px; border-radius: 1.5px; background: #FF5A4E; }
+.v-b .mb-gauge i:nth-child(-n+4) { background: #FF9F0A; opacity: .95; }
+.v-b .mb-note { margin: 0; padding: 8px 12px 11px; border-top: 1px solid rgba(255,255,255,.06); }
+
 </style>
 </head>
 <body>
@@ -5077,11 +5137,11 @@ html, body {
   PHONE_POPUPS[1] = {"id":"battery","title":"低电量模式","body":"低电量模式将暂时减少后台活动，直到 iPhone 完成充电。","ok":"好","alt":null};
   PHONE_POPUPS[2] = {"id":"update","title":"iOS 更新可用","body":"新的 iOS 版本已可安装。今晚连接电源和无线局域网时将自动安装。","ok":"稍后","alt":"现在安装"};
   PHONE_POPUPS[3] = {"id":"wechat","title":"微信","body":"「二舅」发来一条消息：抢到了吗？帮我抢一个呗。","ok":"知道了","alt":"回复"};
-  PHONE_POPUPS[4] = {"id":"location","title":"允许「饱了么」使用你的位置？","body":"用于推荐附近门店、计算到店距离。拒绝后部分功能可能无法使用。","ok":"使用 App 时允许","alt":"不允许"};
-  PHONE_POPUPS[5] = {"id":"appupdate","title":"有 1 个 App 需要更新","body":"「饱了么」有新版本可用，更新后需要重新登录一次。","ok":"稍后","alt":"更新"};
+  PHONE_POPUPS[4] = {"id":"location","title":"允许「美囤」使用你的位置？","body":"用于推荐附近门店、计算到店距离。拒绝后部分功能可能无法使用。","ok":"使用 App 时允许","alt":"不允许"};
+  PHONE_POPUPS[5] = {"id":"appupdate","title":"有 1 个 App 需要更新","body":"「美囤」有新版本可用，更新后需要重新登录一次。","ok":"稍后","alt":"更新"};
   PHONE_POPUPS[6] = {"id":"family","title":"家人共享","body":"「小雨」请求使用你的 Apple 账户购买项目。此请求将在 24 小时后过期。","ok":"拒绝","alt":"允许"};
   PHONE_POPUPS[7] = {"id":"nosignal","title":"无服务","body":"你的蜂窝数据网络当前不可用。将自动切换至其他可用网络。","ok":"好","alt":null};
-  PHONE_POPUPS[8] = {"id":"screentime","title":"屏幕使用时间","body":"你已使用「饱了么」达到今日限额 1 小时。可以再使用 15 分钟，或忽略限额。","ok":"再给 15 分钟","alt":"好"};
+  PHONE_POPUPS[8] = {"id":"screentime","title":"屏幕使用时间","body":"你已使用「美囤」达到今日限额 1 小时。可以再使用 15 分钟，或忽略限额。","ok":"再给 15 分钟","alt":"好"};
   PHONE_POPUPS[9] = {"id":"backup","title":"iCloud 备份失败","body":"上次备份未能完成，因为 iPhone 没有连接到无线局域网。","ok":"好","alt":"查看设置"};
   function pickPopup() { return PHONE_POPUPS[Math.floor(Math.random() * PHONE_POPUPS.length)]; }
   return { PHONE_POPUPS: PHONE_POPUPS, pickPopup: pickPopup };
@@ -5090,13 +5150,13 @@ html, body {
 </script>
   <script>
 /* ============================================================================
-   app.js - 手机试玩版：第一章（饱了么壳）
+   app.js - 手机试玩版：第一章（美囤壳）
    
    分工：
      js/game.js  → 判定、保底、等级、风控、任务推进（唯一来源，73 个用例覆盖）
      js/data.js  → 剧情节点 / 任务表 / 等级表
      web-r5/rules.js → 读秒条几何与落点判定（纯函数）
-     本文件       → 只做「长相」：饱了么 App 壳 + 暗金剧情/结算
+     本文件       → 只做「长相」：美囤 App 壳 + 暗金剧情/结算
    
    存档用独立前缀 hnr5_，不会覆盖原网页版的进度。
    ============================================================================ */
@@ -5122,7 +5182,7 @@ html, body {
 
   // =========================================================================
   // 试玩版补充内容（不改 js/data.js 这个策划基准，全部通过覆盖层挂进来）
-  //   X-1 滑块选座（第三章，猫瞳壳）  X-2 验真票（第四章，倒倒壳）
+  //   X-1 滑块选座（第三章，猫瞳壳）  X-2 验真票（第四章，咸驴壳）
   //   剧情：X1 选座 → C3_1；X2 验票 →（二选一分支）→ C4_1
   // =========================================================================
   const EXTRA_TASKS = {
@@ -5181,7 +5241,7 @@ html, body {
     },
     X2: {
       id: 'X2', type: 'task', speaker: '系统',
-      text: '倒倒上这张二手票，卖家说「绝对真票，扫码可验」。九张票摆在你面前，只有两张是真的。\n\n「摸清楚了再下手，」统子哥难得讲道理，「买错一张，钱和人都搭进去。」',
+      text: '咸驴上这张二手票，卖家说「绝对真票，扫码可验」。九张票摆在你面前，只有两张是真的。\n\n「摸清楚了再下手，」统子哥难得讲道理，「买错一张，钱和人都搭进去。」',
       taskId: 'X-2', onComplete: 'X2b',
     },
     X9: {
@@ -5980,8 +6040,60 @@ ${it.desc}`);
   }
 
   // 剧情原文里的旧称呼统一显示成「统子哥」（不碰 js/data.js）
+  const NAME_MAP = [
+    ['老父亲', '统子哥'],
+    ['饱了么', '美囤'],
+    ['泡泡玛特', '炮炮马'],
+    ['波波', '炮炮马'],
+    ['铁行', '306'],
+    ['倒倒', '咸驴'],
+  ];
   function unifyName(text) {
-    return String(text == null ? '' : text).split('老父亲').join('统子哥');
+    let out = String(text == null ? '' : text);
+    for (const [from, to] of NAME_MAP) out = out.split(from).join(to);
+    return out;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 结局 A：小麦票务后台屏
+  //   现已定稿为 B 版（整幅「运营后台」面板），接在真正的 END_A 渲染路径上。
+  //   A 版（剧情流里的「后台截图卡」）代码保留不挂载，对比时用 ?endv=a 打出来。
+  // 两版共用同一组事实（今日放号 / 在线等号 / 风控 = 你自己定的），只换信息层级。
+  // ---------------------------------------------------------------------------
+  const END_BACKEND_VARIANT = (function () {
+    const m = /[?&]endv=([ab])(?:&|$)/i.exec(location.search);
+    return m ? m[1].toLowerCase() : 'b';          // 默认 B 版（主人 2026-11-02 定稿）
+  })();
+
+  function endBackendA() {
+    return el('div', 'mini-backend v-a', `
+      <div class="mb-head"><b>小麦票务</b><span class="mb-tag">后台 · 管理员</span>
+        <span class="mb-on"><i class="mb-dot"></i>营业中</span></div>
+      <div class="mb-row"><span>今日放号</span><b>3 个 · 已抢完</b></div>
+      <div class="mb-row"><span>在线等号</span><b>6,120 人</b></div>
+      <div class="mb-row"><span>风控</span><b class="bad">100（你自己定的）</b></div>
+      <div class="mb-note">站点名蹭的是「大葱票务」——这一行灰产都这么起名。</div>`);
+  }
+
+  function endBackendB() {
+    return el('div', 'mini-backend v-b', `
+      <div class="mb-bar">
+        <b>小麦票务</b><span class="mb-bar-sub">运营后台</span>
+        <span class="mb-on"><i class="mb-dot"></i>营业中</span>
+      </div>
+      <div class="mb-table">
+        <div class="mb-tr"><span>今日放号</span><b>3 个</b><em>已抢完</em></div>
+        <div class="mb-tr"><span>在线等号</span><b>6,120 人</b><em>只增不减</em></div>
+      </div>
+      <div class="mb-alert">
+        <div class="mb-alert-top"><span>风控值</span><b>100</b><em>你自己定的</em></div>
+        <div class="mb-gauge">${'<i></i>'.repeat(10)}</div>
+      </div>
+      <div class="mb-note">站点名蹭的是「大葱票务」——这一行灰产都这么起名。</div>`);
+  }
+
+  function renderEndBackend() {
+    return END_BACKEND_VARIANT === 'b' ? endBackendB() : endBackendA();
   }
 
   function renderStory() {
@@ -6107,7 +6219,11 @@ ${it.desc}`);
           <div class="ending-tag">结局 ${esc(endingKey)}</div>
         </div><div class="ending-stamp">剧终</div>` : `<div class="scene-label"><b>${esc(chapter.name)}</b><span>${esc(chapter.sub || '')}</span></div>`}`;
     s.appendChild(scene);
-    if (isEnding) s.appendChild(card);   // 结局：先图后文
+    if (isEnding) {
+      // 结局 A：主角自己开的山寨票务站（蹭「大葱票务」的命名法）
+      if (endingKey === 'A') s.appendChild(renderEndBackend());
+      s.appendChild(card);   // 结局：先图后文
+    }
 
     const act = el('div', 'actions');
     let advanceFn = null;      // 纯剧情节点才有：点卡片 = 继续
@@ -6206,7 +6322,7 @@ ${it.desc}`);
   }
 
   // =========================================================================
-  // 取号小游戏（饱了么壳）
+  // 取号小游戏（美囤壳）
   // =========================================================================
   const buy = {
     taskId: null,
@@ -6245,8 +6361,8 @@ ${it.desc}`);
     taps: 0,            // rapid：本轮连点次数
     rapidMs: 3000,      // rapid：抢票窗口时长
     rapidTarget: 24,    // rapid：满分手速（连点次数）
-    store: 0,           // 波波：当前选中的抽签门店（0-based）
-    openAt: 0,          // 波波：开签时间戳（毫秒），进场时按"今晚 20:00"算
+    store: 0,           // 炮炮马：当前选中的抽签门店（0-based）
+    openAt: 0,          // 炮炮马：开签时间戳（毫秒），进场时按"今晚 20:00"算
   };
 
   // 进局前要过人机验证的任务：取号（T1-1）、VIP 取号（T1-2）、春运（CYG / CYB）
@@ -6335,7 +6451,7 @@ ${it.desc}`);
         round: 0, closed: false, finalPrice: null, log: [],
       };
     }
-    // 号码池：只有"取号"系任务（饱了么壳）才有真号可抢
+    // 号码池：只有"取号"系任务（美囤壳）才有真号可抢
     const isQueueTask = (D.TASKS[taskId] && (D.TASKS[taskId].chapter === 'prologue' || D.TASKS[taskId].chapter === 'ch1'));
     // 号池跟着存档走（run.pools），重开游戏也还在
     run.pools = run.pools || {};
@@ -7269,17 +7385,17 @@ ${it.desc}`);
   }
 
   // =========================================================================
-  // 壳定义：饱了么（餐厅取号）/ 波波（潮玩抽签）
+  // 壳定义：美囤（餐厅取号）/ 炮炮马（潮玩抽签）
   // 壳只给长相和文案，判定与数值仍走 GameEngine
   // =========================================================================
 
   // ---- 开 App 的过场动画 -----------------------------------------------------
   const APP_ICONS = [
-    { key: 'bao', name: '饱了么', color: '#FF6A00', glyph: '饱' },
-    { key: 'bobo', name: '波波', color: '#7C6BF0', glyph: '波' },
+    { key: 'bao', name: '美囤', color: '#FF6A00', glyph: '饱' },
+    { key: 'bobo', name: '炮炮马', color: '#7C6BF0', glyph: '波' },
     { key: 'mao', name: '猫瞳', color: '#FF3D7F', glyph: '猫' },
-    { key: 'tie', name: '铁行', color: '#2060B2', glyph: '铁' },
-    { key: 'dao', name: '倒倒', color: '#16A06A', glyph: '倒' },
+    { key: 'tie', name: '306', color: '#007AFF', glyph: '铁' },
+    { key: 'dao', name: '咸驴', color: '#16A06A', glyph: '倒' },
     { key: 'cong', name: '大葱票务', color: '#D34539', glyph: '葱' },
   ];
 
@@ -7383,7 +7499,7 @@ ${it.desc}`);
     },
     tie: {
       id: 'tie',
-      title: '铁行 · 火车票',
+      title: '306 · 山城铁路',
       right: '我的',
       clockLabel: '距开售',
       tapIdle: '立即抢票',
@@ -7396,7 +7512,7 @@ ${it.desc}`);
     },
     dao: {
       id: 'dao',
-      title: '倒倒 · 二手',
+      title: '咸驴 · 二手',
       right: '钱包',
       clockLabel: '距下架',
       tapIdle: '立即拍下',
@@ -7422,7 +7538,7 @@ ${it.desc}`);
     },
     bobo: {
       id: 'bobo',
-      title: '波波 BOBO',
+      title: '炮炮马 BOBO',
       right: '购物袋',
       clockLabel: '距开签',
       tapIdle: '立即参与抽签',
@@ -7435,7 +7551,7 @@ ${it.desc}`);
     },
   };
 
-  // 波波的门店与开签时间（抽签页面专用；不参与判定）
+  // 炮炮马的门店与开签时间（抽签页面专用；不参与判定）
   const BOBO_STORES = ['解放碑旗舰店', '观音桥店', '沙坪坝店'];
   function boboStoreName() { return BOBO_STORES[buy.store] || BOBO_STORES[0]; }
 
@@ -7461,7 +7577,7 @@ ${it.desc}`);
 
 
 
-  // ---- 壳内容：铁行（春运火车票）--------------------------------------------
+  // ---- 壳内容：306（春运火车票）--------------------------------------------
   const TIE_TRAINS_BASE = [
     { no: 'G1314', span: '08:10 → 10:50', seat: '二等座', price: '¥ 385', note: '候补 3 人', ok: true },
     { no: 'D1862', span: '09:24 → 12:31', seat: '二等座', price: '¥ 268', note: '候补 17 人', ok: false },
@@ -7532,7 +7648,7 @@ ${it.desc}`);
     scroll.appendChild(notes);
   }
 
-  // ---- 壳内容：倒倒（二手出货）----------------------------------------------
+  // ---- 壳内容：咸驴（二手出货）----------------------------------------------
   // 信息骨架照 scripts/ui/shells/Dao.lua：挂价 vs 原价、卖家信誉、围观人数、交易提示
   function renderDaoContent(scroll, run, t) {
     // 搜索栏
@@ -8349,7 +8465,7 @@ ${it.desc}`);
   }
 
 
-  // ---- 壳内容：饱了么（餐厅取号）-------------------------------------------
+  // ---- 壳内容：美囤（餐厅取号）-------------------------------------------
   function renderBaoContent(scroll, run, t) {
     // 门店卡
     const shop = el('div', 'bao-card');
@@ -8625,7 +8741,7 @@ ${it.desc}`);
   function renderHowtoCard() {
     const h = howtoOf(buy.mode);
     const taskDef = D.TASKS[buy.taskId] || {};
-    const shellName = { bao: '饱了么', bobo: '波波', mao: '猫瞳', tie: '铁行', dao: '倒倒', cong: '大葱票务' }[buy.shell] || 'App';
+    const shellName = { bao: '美囤', bobo: '炮炮马', mao: '猫瞳', tie: '306 · 山城铁路', dao: '咸驴', cong: '大葱票务' }[buy.shell] || 'App';
     const card = el('div', 'howto-card');
     card.innerHTML = `
       <div class="howto-head">
