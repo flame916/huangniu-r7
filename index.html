@@ -3462,7 +3462,7 @@ html, body {
 .v-b .mb-note { margin: 0; padding: 8px 12px 11px; border-top: 1px solid rgba(255,255,255,.06); }
 
 </style>
-<meta name="hn-build" content="src=ecb4a022">
+<meta name="hn-build" content="src=e93cea2f">
 </head>
 <body>
   <div id="app"></div>
@@ -5701,7 +5701,9 @@ ${it.desc}`);
     const run = app2.run;
     const hasSave = !!run;
     const flags = (run && run.flags) || {};
-    const endings = (flags.endingA ? 1 : 0) + (flags.endingB ? 1 : 0);
+    // 四个结局都算（A/B/隐藏/速通），与引擎版「结局收集 n / 4」对齐
+    const endings = (flags.endingA ? 1 : 0) + (flags.endingB ? 1 : 0)
+      + (flags.endingHidden ? 1 : 0) + (flags.endingSpeedy ? 1 : 0);
     const day = hasSave ? (run.day || 1) : 1;
     const money = hasSave ? (run.money || 0) : 0;
 
@@ -5717,7 +5719,7 @@ ${it.desc}`);
       <div class="hero-big">抢<span class="hero-big-accent">不</span>到</div>
       <div class="hero-sub">的，永远抢不到。</div>
       <div class="hero-tags">
-        <span>黑色幽默</span><span>抢号模拟</span><span>两种结局</span>
+        <span>黑色幽默</span><span>抢号模拟</span><span>四种结局</span>
       </div>
 `;
     s.appendChild(hero);
@@ -5783,7 +5785,7 @@ ${it.desc}`);
     const row = el('div', 'title-row');
     const shopBtn = el('button', 'tool-btn title-tool', '装备店');
     shopBtn.onclick = () => { if (!app2.run) { app2.run = freshRun(); save(); } go('shop'); };
-    const endBtn = el('button', 'tool-btn title-tool', `结局 ${endings}/2`);
+    const endBtn = el('button', 'tool-btn title-tool', `结局 ${endings}/4`);
     endBtn.onclick = () => toast(endings === 0 ? '还没通关过，先抢吧' : `已达成 ${endings} 个结局`);
     row.appendChild(shopBtn);
     row.appendChild(endBtn);
@@ -9279,6 +9281,6 @@ ${it.desc}`);
 })();
 
 </script>
-<script>window.HN_BUILD = "src=ecb4a022";</script>
+<script>window.HN_BUILD = "src=e93cea2f";</script>
 </body>
 </html>
